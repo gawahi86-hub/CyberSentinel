@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CyberSentinel Dashboard</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- GLOBAL STYLES -->
+    <style>
+        body {
+            font-family: Arial;
+            background: #0f172a;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #38bdf8;
+        }
+
+        .header p {
+            text-align: center;
+            color: #94a3b8;
+        }
+
+        .card {
+            background: #1e293b;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+        }
+
+        input {
+            padding: 12px;
+            width: 350px;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 12px 18px;
+            background: #38bdf8;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #0ea5e9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #1e293b;
+        }
+
+        th, td {
+            border: 1px solid #334155;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background: #0f172a;
+        }
+
+        a {
+            color: #38bdf8;
+            font-weight: bold;
+        }
+
+        .risk-low { color: #22c55e; font-weight: bold; }
+        .risk-medium { color: #facc15; font-weight: bold; }
+        .risk-high { color: #ef4444; font-weight: bold; }
+
+        #loading {
+            display: none;
+            text-align: center;
+            color: #38bdf8;
+            font-weight: bold;
+            margin: 10px;
+        }
+
+        .risk-bar {
+            background: #334155;
+            width: 100%;
+            height: 20px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- HEADER -->
+<div class="header">
+    <h1>🛡 CyberSentinel</h1>
+    <p>Automated Web Vulnerability & Reconnaissance Platform</p>
+    <p>Built with Flask • Python • Security Analysis Engine</p>
+</div>
+
+<!-- FORM -->
+<div style="text-align:center;">
+    <form method="POST">
+        <input type="text" name="url" placeholder="Enter website (example.com)" required>
+        <button type="submit">Scan</button>
+    </form>
+</div>
+
+<!-- LOADING -->
+<div id="loading">🔄 Scanning target... please wait</div>
+
+{% if result %}
+
+<!-- SUMMARY -->
+<div class="card">
+    <h2>📊 Security Summary</h2>
+
+    <p><b>Target:</b> {{ result.url }}</p>
+    <p><b>Domain:</b> {{ result.domain }}</p>
+    <p><b>IP:</b> {{ result.ip }}</p>
+
+    <p><b>Risk Score:</b> {{ result.risk_score }}/100</p>
+
+    <p><b>Risk Level:</b>
+        <span class="
+            {% if result.risk_level == 'LOW' %}risk-low{% endif %}
+            {% if result.risk_level == 'MEDIUM' %}risk-medium{% endif %}
+            {% if result.risk_level == 'HIGH' %}risk-high{% endif %}
+        ">
+            {{ result.risk_level }}
+        </span>
+    </p>
+
+    <!-- RISK BAR -->
+    <div class="risk-bar">
+        <div style="
+            height:20px;
+            width:{{ result.risk_score }}%;
+            background:
+            {% if result.risk_level == 'LOW' %}#22c55e{% endif %}
+            {% if result.risk_level == 'MEDIUM' %}#facc15{% endif %}
+            {% if result.risk_level == 'HIGH' %}#ef4444{% endif %};
+            border-radius:10px;
+        "></div>
+    </div>
+</div>
+
+<!-- ISSUES -->
+<div class="card">
+    <h2>⚠️ Vulnerability Issues</h2>
+    <ul>
+        {% for i in result.issues %}
+            <li>{{ i }}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- PORT SCAN -->
+<div class="card">
+    <h2>🔍 Port Scan Results</h2>
+
+    <table>
+        <tr>
+            <th>Port</th>
+            <th>Service</th>
+            <th>Status</th>
+        </tr>
+
+        {% for p in result.ports %}
+        <tr>
+            <td>{{ p.port }}</td>
+            <td>{{ p.service }}</td>
+            <td>{{ p.status }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<!-- PDF -->
+<div class="card">
+    <h2>📄 Report</h2>
+
+    {% if pdf_file %}
+        <a href="/download/{{ pdf_file }}">📥 Download PDF Report</a>
+    {% endif %}
+</div>
+
+{% endif %}
+
+<!-- HISTORY -->
+<div class="card">
+    <h2>📁 Scan History</h2>
+
+    {% if history %}
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>URL</th>
+            <th>Domain</th>
+            <th>Score</th>
+            <th>Level</th>
+        </tr>
+
+        {% for h in history %}
+        <tr>
+            <td>{{ h[0] }}</td>
+            <td>{{ h[1] }}</td>
+            <td>{{ h[2] }}</td>
+            <td>{{ h[3] }}</td>
+            <td>{{ h[4] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+        <p>No scan history yet.</p>
+    {% endif %}
+</div>
+
+</div>
+
+<!-- LOADING SCRIPT -->
+<script>
+document.querySelector("form").addEventListener("submit", function () {
+    document.getElementById("loading").style.display = "block";
+});
+</script>
+
+</body>
+</html>

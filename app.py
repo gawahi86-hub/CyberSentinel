@@ -1,74 +1,73 @@
-import os
-from flask import Flask, render_template, request, send_file
-
-from recon import run_recon
-from scanner import run_port_scan
-from risk_engine import analyze_security
-from database import init_db, save_scan, get_scans
-from report import generate_pdf
+from flask import Flask, render_template, request, redirect, url_for
+import socket
+import whois
+import dns.resolver
+import requests
 
 app = Flask(__name__)
 
-init_db()
+# -----------------------------
+# SAFE RESULT HANDLING FUNCTION
+# -----------------------------
+def safe_get(func, default="Error"):
+    try:
+        return func()
+    except Exception:
+        return default
 
 
+# -----------------------------
+# HOME ROUTE
+# -----------------------------
 @app.route("/", methods=["GET", "POST"])
-def home():
+def index():
     result = None
-    pdf_file = None
-
-    history = get_scans()
 
     if request.method == "POST":
-        url = request.form.get("url")
+        target = request.form.get("target")
 
-        if not url.startswith(("http://", "https://")):
-            url = "https://" + url
+        if not target:
+            result = {
+                "error": "No target provided"
+            }
+            return render_template("index.html", result=result)
 
-        # Recon
-        recon_data = run_recon(url)
+        # -----------------------------
+        # BASIC RECON
+        # -----------------------------
+        ip = safe_get(lambda: socket.gethostbyname(target))
 
-        # Scan
-        port_results = run_port_scan(recon_data["domain"])
+        # -----------------------------
+        # WHOIS LOOKUP
+        # -----------------------------
+        whois_info = safe_get(lambda: str(whois.whois(target)))
 
-        # Risk
-        score, level, issues = analyze_security(
-            recon_data["headers"],
-            url
-        )
+        # -----------------------------
+        # DNS LOOKUP
+        # -----------------------------
+        dns_records = safe_get(lambda: [str(r) for r in dns.resolver.resolve(target, "A")])
 
+        # -----------------------------
+        # HTTP CHECK
+        # -----------------------------
+        http_status = safe_get(lambda: requests.get("http://" + target, timeout=5).status_code)
+
+        # -----------------------------
+        # FINAL RESULT STRUCTURE
+        # -----------------------------
         result = {
-            "url": url,
-            "domain": recon_data["domain"],
-            "ip": recon_data["ip"],
-            "dns": recon_data["dns"],
-            "headers": recon_data["headers"],
-            "whois": recon_data["whois"],
-            "ports": port_results,
-            "risk_score": score,
-            "risk_level": level,
-            "issues": issues if issues else []
+            "target": target,
+            "ip": ip,
+            "whois": whois_info[:1000],  # prevent huge output crash
+            "dns": dns_records,
+            "http_status": http_status
         }
 
-        save_scan(url, recon_data["domain"], score, level)
-        history = get_scans()
-
-        pdf_path = generate_pdf(result)
-        pdf_file = os.path.basename(pdf_path)
-
-    return render_template(
-        "index.html",
-        result=result,
-        history=history,
-        pdf_file=pdf_file
-    )
+    return render_template("index.html", result=result)
 
 
-@app.route("/download/<filename>")
-def download_file(filename):
-    path = os.path.join("reports", filename)
-    return send_file(path, as_attachment=True)
-
-
+# -----------------------------
+# RUN APP (RENDER READY)
+# -----------------------------
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    app.run(host="0.0.0.0", port=10000)

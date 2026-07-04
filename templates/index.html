@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>CyberSentinel AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CyberSentinel</title>
 
 <style>
 body{
@@ -23,7 +24,6 @@ body{
     padding:20px;
     border-radius:10px;
     margin-bottom:20px;
-    box-shadow:0 0 10px rgba(0,0,0,0.4);
 }
 
 h1{
@@ -34,8 +34,8 @@ h1{
 input{
     width:70%;
     padding:12px;
-    border:none;
     border-radius:5px;
+    border:none;
 }
 
 button{
@@ -44,8 +44,8 @@ button{
     border:none;
     color:black;
     font-weight:bold;
-    cursor:pointer;
     border-radius:5px;
+    cursor:pointer;
 }
 
 table{
@@ -65,9 +65,18 @@ td{
 }
 
 .badge-high{ color:red; font-weight:bold; }
-.badge-low{ color:lime; font-weight:bold; }
 .badge-medium{ color:orange; font-weight:bold; }
+.badge-low{ color:lime; font-weight:bold; }
 
+.btn{
+    display:inline-block;
+    margin-top:15px;
+    padding:10px 15px;
+    background:green;
+    color:white;
+    text-decoration:none;
+    border-radius:5px;
+}
 </style>
 </head>
 
@@ -75,7 +84,7 @@ td{
 
 <div class="container">
 
-<h1>🛡 CyberSentinel AI Dashboard</h1>
+<h1>🛡 CyberSentinel Dashboard</h1>
 
 <div class="card">
 <form method="POST">
@@ -87,28 +96,27 @@ td{
 {% if result %}
 
 <div class="card">
-<h2>📊 AI Security Summary</h2>
+<h2>📊 Security Summary</h2>
 
 <p><b>Target:</b> {{ result.url }}</p>
 <p><b>Domain:</b> {{ result.domain }}</p>
 <p><b>IP:</b> {{ result.ip }}</p>
-
 <p><b>Risk Score:</b> {{ result.risk_score }}/100</p>
 
 <p><b>Risk Level:</b>
 {% if result.risk_level == "HIGH" %}
 <span class="badge-high">HIGH</span>
-{% elif result.risk_level == "LOW" %}
-<span class="badge-low">LOW</span>
-{% else %}
+{% elif result.risk_level == "MEDIUM" %}
 <span class="badge-medium">MEDIUM</span>
+{% else %}
+<span class="badge-low">LOW</span>
 {% endif %}
 </p>
 
 </div>
 
 <div class="card">
-<h2>⚠️ Issues (AI Analysis)</h2>
+<h2>⚠️ Vulnerabilities</h2>
 
 {% if result.issues %}
 <ul>
@@ -117,7 +125,7 @@ td{
 {% endfor %}
 </ul>
 {% else %}
-<p>No issues detected</p>
+<p>No issues found</p>
 {% endif %}
 
 </div>
@@ -143,10 +151,15 @@ td{
 
 </div>
 
+<div class="card">
+<h2>📄 Report</h2>
+<a class="btn" href="/download-report">Download PDF</a>
+</div>
+
 {% endif %}
 
 <div class="card">
-<h2>📁 History</h2>
+<h2>📁 Scan History</h2>
 
 <table>
 <tr>
@@ -166,7 +179,6 @@ td{
 <td>{{ row[4] }}</td>
 </tr>
 {% endfor %}
-
 </table>
 
 </div>

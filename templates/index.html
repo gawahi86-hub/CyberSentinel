@@ -35,17 +35,15 @@ input{
     width:70%;
     padding:12px;
     border-radius:5px;
-    border:none;
 }
 
 button{
     padding:12px 18px;
     background:#00d4ff;
     border:none;
-    color:black;
     font-weight:bold;
-    border-radius:5px;
     cursor:pointer;
+    border-radius:5px;
 }
 
 table{
@@ -64,13 +62,9 @@ td{
     border-bottom:1px solid #2a2f3a;
 }
 
-.badge-high{ color:red; font-weight:bold; }
-.badge-medium{ color:orange; font-weight:bold; }
-.badge-low{ color:lime; font-weight:bold; }
-
 .btn{
     display:inline-block;
-    margin-top:15px;
+    margin-top:10px;
     padding:10px 15px;
     background:green;
     color:white;
@@ -102,21 +96,11 @@ td{
 <p><b>Domain:</b> {{ result.domain }}</p>
 <p><b>IP:</b> {{ result.ip }}</p>
 <p><b>Risk Score:</b> {{ result.risk_score }}/100</p>
-
-<p><b>Risk Level:</b>
-{% if result.risk_level == "HIGH" %}
-<span class="badge-high">HIGH</span>
-{% elif result.risk_level == "MEDIUM" %}
-<span class="badge-medium">MEDIUM</span>
-{% else %}
-<span class="badge-low">LOW</span>
-{% endif %}
-</p>
-
+<p><b>Risk Level:</b> {{ result.risk_level }}</p>
 </div>
 
 <div class="card">
-<h2>⚠️ Vulnerabilities</h2>
+<h2>⚠️ Issues</h2>
 
 {% if result.issues %}
 <ul>
@@ -127,7 +111,6 @@ td{
 {% else %}
 <p>No issues found</p>
 {% endif %}
-
 </div>
 
 <div class="card">
@@ -148,12 +131,16 @@ td{
 </tr>
 {% endfor %}
 </table>
-
 </div>
 
+<!-- ✅ FIXED DOWNLOAD BUTTON -->
 <div class="card">
 <h2>📄 Report</h2>
-<a class="btn" href="/download-report">Download PDF</a>
+
+<a class="btn" href="/download-report">
+📥 Download PDF Report
+</a>
+
 </div>
 
 {% endif %}

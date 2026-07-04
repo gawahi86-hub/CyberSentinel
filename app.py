@@ -39,13 +39,16 @@ def index():
 
             ip = get_ip(domain)
 
+            # ✅ SAFE WHOIS
             try:
                 whois_info = str(whois.whois(domain))
             except:
                 whois_info = "Unavailable"
 
+            # ✅ SAFE DNS (NO FREEZE ON RENDER)
             try:
-                dns_records = [str(x) for x in dns.resolver.resolve(domain, "A")]
+                answers = dns.resolver.resolve(domain, "A", lifetime=2)
+                dns_records = [str(x) for x in answers]
             except:
                 dns_records = []
 
@@ -79,6 +82,9 @@ def index():
         result=result,
         history=history
     )
+
+
+# 🚀 FIXED DOWNLOAD ROUTE (STABLE + SAFE FILE NAME)
 @app.route("/download-report")
 def download_report():
     history = get_scans()
@@ -86,16 +92,19 @@ def download_report():
     if not history:
         return "No scan data available", 404
 
-    # SQLite returns tuple:
-    # (id, url, domain, risk_score, risk_level)
     latest = history[0]
 
+    url = latest[1]
+    domain = latest[2]
+    score = latest[3]
+    level = latest[4]
+
     result = {
-        "url": latest[1],
-        "domain": latest[2],
+        "url": url,
+        "domain": domain,
         "ip": "",
-        "risk_score": latest[3],
-        "risk_level": latest[4],
+        "risk_score": score,
+        "risk_level": level,
         "issues": []
     }
 
@@ -104,7 +113,15 @@ def download_report():
     if not pdf_path:
         return "PDF generation failed", 500
 
-    return send_file(pdf_path, as_attachment=True)
+    # ✅ CLEAN FILE NAME
+    safe_domain = domain.replace(".", "_")
+    filename = f"CyberSentinel_{safe_domain}_Report.pdf"
+
+    return send_file(
+        pdf_path,
+        as_attachment=True,
+        download_name=filename
+    )
 
 
 if __name__ == "__main__":

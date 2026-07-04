@@ -1,51 +1,49 @@
-def analyze_security(headers, url, ssl_status="Unavailable"):
-    score = 100
+def analyze_security(headers, url, ssl_status):
+    score = 0
     issues = []
 
-    # ----------------------------
-    # SECURITY HEADERS CHECK
-    # ----------------------------
-    required_headers = {
-        "Content-Security-Policy": "Missing Content Security Policy (CSP)",
-        "Strict-Transport-Security": "Missing HTTP Strict Transport Security (HSTS)",
-        "X-Frame-Options": "Missing X-Frame-Options",
-        "X-Content-Type-Options": "Missing X-Content-Type-Options",
-        "Referrer-Policy": "Missing Referrer-Policy",
-        "Permissions-Policy": "Missing Permissions-Policy"
-    }
+    # -------------------------
+    # HEADER CHECKS
+    # -------------------------
+    if "Content-Security-Policy" not in headers:
+        score += 20
+        issues.append("Missing Content-Security-Policy (CSP)")
 
-    for header, message in required_headers.items():
-        value = headers.get(header)
+    if "Strict-Transport-Security" not in headers:
+        score += 20
+        issues.append("Missing HSTS")
 
-        if value in [None, "", "Missing", "Unavailable"]:
-            score -= 10
-            issues.append(message)
+    if "X-Content-Type-Options" not in headers:
+        score += 10
+        issues.append("Missing X-Content-Type-Options")
 
-    # ----------------------------
-    # HTTPS CHECK
-    # ----------------------------
-    if not url.lower().startswith("https://"):
-        score -= 15
-        issues.append("Website is not using HTTPS")
+    if "Referrer-Policy" not in headers:
+        score += 10
+        issues.append("Missing Referrer-Policy")
 
-    # ----------------------------
-    # SSL CERTIFICATE CHECK
-    # ----------------------------
-    if ssl_status != "Valid":
-        score -= 15
-        issues.append("SSL certificate unavailable or invalid")
+    if "Permissions-Policy" not in headers:
+        score += 10
+        issues.append("Missing Permissions-Policy")
 
-    # ----------------------------
-    # KEEP SCORE IN RANGE
-    # ----------------------------
-    score = max(0, min(score, 100))
+    # -------------------------
+    # SSL CHECK
+    # -------------------------
+    if ssl_status != "valid":
+        score += 30
+        issues.append("SSL Certificate Issue")
 
-    # ----------------------------
-    # RISK LEVEL
-    # ----------------------------
-    if score >= 85:
+    # -------------------------
+    # SCORE LIMIT (safety cap)
+    # -------------------------
+    if score > 100:
+        score = 100
+
+    # -------------------------
+    # FIXED RISK LEVEL LOGIC
+    # -------------------------
+    if score < 40:
         level = "LOW"
-    elif score >= 60:
+    elif score < 70:
         level = "MEDIUM"
     else:
         level = "HIGH"

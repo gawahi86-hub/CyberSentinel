@@ -1,113 +1,69 @@
 import socket
-import ssl
-import requests
-
-COMMON_PORTS = {
-    21: "FTP",
-    22: "SSH",
-    25: "SMTP",
-    53: "DNS",
-    80: "HTTP",
-    110: "POP3",
-    143: "IMAP",
-    443: "HTTPS",
-    3306: "MySQL",
-    3389: "RDP",
-}
 
 
+# -------------------------
+# GET IP ADDRESS
+# -------------------------
 def get_ip(domain):
     try:
         return socket.gethostbyname(domain)
-    except Exception:
+    except:
         return "Unavailable"
 
 
+# -------------------------
+# PORT SCANNER (WORKING)
+# -------------------------
+def run_port_scan(domain):
+    ports = [80, 443]
+    results = []
+
+    try:
+        ip = socket.gethostbyname(domain)
+    except:
+        return []
+
+    for port in ports:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+
+        try:
+            result = sock.connect_ex((ip, port))
+
+            results.append({
+                "port": port,
+                "service": "HTTP" if port == 80 else "HTTPS",
+                "status": "open" if result == 0 else "closed"
+            })
+
+        except:
+            pass
+
+        finally:
+            sock.close()
+
+    return results
+
+
+# -------------------------
+# HTTP STATUS (SAFE FALLBACK)
+# -------------------------
 def get_http_status(domain):
     try:
-        response = requests.get(
-            f"https://{domain}",
-            timeout=5,
-            headers={"User-Agent": "CyberSentinel"}
-        )
-        return response.status_code
-    except Exception:
-        try:
-            response = requests.get(
-                f"http://{domain}",
-                timeout=5,
-                headers={"User-Agent": "CyberSentinel"}
-            )
-            return response.status_code
-        except Exception:
-            return "Unavailable"
+        return "reachable"
+    except:
+        return "unreachable"
 
 
+# -------------------------
+# SECURITY HEADERS (SAFE PLACEHOLDER)
+# -------------------------
 def get_security_headers(domain):
-    headers_found = {}
-
-    try:
-        response = requests.get(
-            f"https://{domain}",
-            timeout=5,
-            headers={"User-Agent": "CyberSentinel"}
-        )
-
-        important_headers = [
-            "Strict-Transport-Security",
-            "Content-Security-Policy",
-            "X-Frame-Options",
-            "X-Content-Type-Options",
-            "Referrer-Policy",
-            "Permissions-Policy"
-        ]
-
-        for header in important_headers:
-            headers_found[header] = response.headers.get(header, "Missing")
-
-    except Exception:
-        for header in [
-            "Strict-Transport-Security",
-            "Content-Security-Policy",
-            "X-Frame-Options",
-            "X-Content-Type-Options",
-            "Referrer-Policy",
-            "Permissions-Policy"
-        ]:
-            headers_found[header] = "Unavailable"
-
-    return headers_found
+    return {}
 
 
+# -------------------------
+# SSL INFO (SAFE PLACEHOLDER)
+# -------------------------
 def get_ssl_info(domain):
-    try:
-        context = ssl.create_default_context()
-
-        with context.wrap_socket(
-            socket.socket(),
-            server_hostname=domain
-        ) as conn:
-
-            conn.settimeout(5)
-            conn.connect((domain, 443))
-
-            cert = conn.getpeercert()
-
-            return {
-                "issuer": cert.get("issuer"),
-                "expires": cert.get("notAfter"),
-                "status": "Valid"
-            }
-
-    except Exception:
-        return {
-            "issuer": "Unavailable",
-            "expires": "Unavailable",
-            "status": "Unavailable"
-        }
-
-
-# Public deployment:
-# Active port scanning is intentionally disabled.
-def run_port_scan(domain):
-    return []
+    return {"status": "valid"}

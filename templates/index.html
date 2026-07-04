@@ -2,242 +2,271 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CyberSentinel Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSentinel</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
-    <!-- GLOBAL STYLES -->
     <style>
-        body {
-            font-family: Arial;
-            background: #0f172a;
-            color: white;
-            margin: 0;
-            padding: 20px;
+        body{
+            font-family: Arial, Helvetica, sans-serif;
+            background:#f4f7fa;
+            margin:0;
+            padding:0;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: auto;
+        .container{
+            width:90%;
+            max-width:1100px;
+            margin:30px auto;
+            background:white;
+            padding:30px;
+            border-radius:10px;
+            box-shadow:0 0 10px rgba(0,0,0,.1);
         }
 
-        h1 {
-            text-align: center;
-            color: #38bdf8;
+        h1{
+            text-align:center;
+            color:#0b5394;
         }
 
-        .header p {
-            text-align: center;
-            color: #94a3b8;
+        h2{
+            color:#0b5394;
+            margin-top:30px;
         }
 
-        .card {
-            background: #1e293b;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 10px;
+        h3{
+            color:#333;
         }
 
-        input {
-            padding: 12px;
-            width: 350px;
-            border: none;
-            border-radius: 5px;
+        input[type=text]{
+            width:75%;
+            padding:12px;
+            font-size:16px;
+            border:1px solid #ccc;
+            border-radius:5px;
         }
 
-        button {
-            padding: 12px 18px;
-            background: #38bdf8;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
+        button{
+            padding:12px 20px;
+            background:#0b5394;
+            color:white;
+            border:none;
+            border-radius:5px;
+            cursor:pointer;
         }
 
-        button:hover {
-            background: #0ea5e9;
+        button:hover{
+            background:#073763;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #1e293b;
+        table{
+            width:100%;
+            border-collapse:collapse;
+            margin-top:15px;
         }
 
-        th, td {
-            border: 1px solid #334155;
-            padding: 10px;
-            text-align: center;
+        table,th,td{
+            border:1px solid #ddd;
         }
 
-        th {
-            background: #0f172a;
+        th{
+            background:#0b5394;
+            color:white;
+            padding:10px;
         }
 
-        a {
-            color: #38bdf8;
-            font-weight: bold;
+        td{
+            padding:10px;
         }
 
-        .risk-low { color: #22c55e; font-weight: bold; }
-        .risk-medium { color: #facc15; font-weight: bold; }
-        .risk-high { color: #ef4444; font-weight: bold; }
-
-        #loading {
-            display: none;
-            text-align: center;
-            color: #38bdf8;
-            font-weight: bold;
-            margin: 10px;
+        ul{
+            margin-left:20px;
         }
 
-        .risk-bar {
-            background: #334155;
-            width: 100%;
-            height: 20px;
-            border-radius: 10px;
-            margin-top: 10px;
+        .btn{
+            display:inline-block;
+            margin-top:20px;
+            padding:12px 18px;
+            background:#28a745;
+            color:white;
+            text-decoration:none;
+            border-radius:5px;
+        }
+
+        .btn:hover{
+            background:#1f7d34;
+        }
+
+        .section{
+            margin-top:30px;
         }
     </style>
-</head>
 
+</head>
 <body>
 
 <div class="container">
 
-<!-- HEADER -->
-<div class="header">
-    <h1>🛡 CyberSentinel</h1>
-    <p>Automated Web Vulnerability & Reconnaissance Platform</p>
-    <p>Built with Flask • Python • Security Analysis Engine</p>
-</div>
+<h1>🛡 CyberSentinel Security Scanner</h1>
 
-<!-- FORM -->
-<div style="text-align:center;">
-    <form method="POST">
-        <input type="text" name="url" placeholder="Enter website (example.com)" required>
-        <button type="submit">Scan</button>
-    </form>
-</div>
+<form method="POST">
 
-<!-- LOADING -->
-<div id="loading">🔄 Scanning target... please wait</div>
+<input
+type="text"
+name="url"
+placeholder="Enter website (example.com or https://example.com)"
+required>
+
+<button type="submit">
+Scan Website
+</button>
+
+</form>
 
 {% if result %}
 
-<!-- SUMMARY -->
-<div class="card">
-    <h2>📊 Security Summary</h2>
+<div class="section">
 
-    <p><b>Target:</b> {{ result.url }}</p>
-    <p><b>Domain:</b> {{ result.domain }}</p>
-    <p><b>IP:</b> {{ result.ip }}</p>
+<h2>📊 Security Summary</h2>
 
-    <p><b>Risk Score:</b> {{ result.risk_score }}/100</p>
+<p><b>Target:</b> {{ result.url }}</p>
 
-    <p><b>Risk Level:</b>
-        <span class="
-            {% if result.risk_level == 'LOW' %}risk-low{% endif %}
-            {% if result.risk_level == 'MEDIUM' %}risk-medium{% endif %}
-            {% if result.risk_level == 'HIGH' %}risk-high{% endif %}
-        ">
-            {{ result.risk_level }}
-        </span>
-    </p>
+<p><b>Domain:</b> {{ result.domain }}</p>
 
-    <!-- RISK BAR -->
-    <div class="risk-bar">
-        <div style="
-            height:20px;
-            width:{{ result.risk_score }}%;
-            background:
-            {% if result.risk_level == 'LOW' %}#22c55e{% endif %}
-            {% if result.risk_level == 'MEDIUM' %}#facc15{% endif %}
-            {% if result.risk_level == 'HIGH' %}#ef4444{% endif %};
-            border-radius:10px;
-        "></div>
-    </div>
+<p><b>IP:</b> {{ result.ip }}</p>
+
+<p><b>HTTP Status:</b> {{ result.http_status }}</p>
+
+<p><b>Risk Score:</b> {{ result.risk_score }}/100</p>
+
+<p><b>Risk Level:</b> {{ result.risk_level }}</p>
+
 </div>
 
-<!-- ISSUES -->
-<div class="card">
-    <h2>⚠️ Vulnerability Issues</h2>
-    <ul>
-        {% for i in result.issues %}
-            <li>{{ i }}</li>
-        {% endfor %}
-    </ul>
+
+<div class="section">
+
+<h2>⚠️ Vulnerability Issues</h2>
+
+{% if result.issues %}
+
+<ul>
+
+{% for issue in result.issues %}
+<li>{{ issue }}</li>
+{% endfor %}
+
+</ul>
+
+{% else %}
+
+<p>No major issues found.</p>
+
+{% endif %}
+
 </div>
 
-<!-- PORT SCAN -->
-<div class="card">
-    <h2>🔍 Port Scan Results</h2>
 
-    <table>
-        <tr>
-            <th>Port</th>
-            <th>Service</th>
-            <th>Status</th>
-        </tr>
+<div class="section">
 
-        {% for p in result.ports %}
-        <tr>
-            <td>{{ p.port }}</td>
-            <td>{{ p.service }}</td>
-            <td>{{ p.status }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+<h2>🔍 Port Scan Results</h2>
+
+<table>
+
+<tr>
+<th>Port</th>
+<th>Service</th>
+<th>Status</th>
+</tr>
+
+{% if result.ports %}
+
+{% for port in result.ports %}
+
+<tr>
+<td>{{ port.port }}</td>
+<td>{{ port.service }}</td>
+<td>{{ port.status }}</td>
+</tr>
+
+{% endfor %}
+
+{% else %}
+
+<tr>
+<td colspan="3">No port scan data available</td>
+</tr>
+
+{% endif %}
+
+</table>
+
 </div>
 
-<!-- PDF -->
-<div class="card">
-    <h2>📄 Report</h2>
 
-    {% if pdf_file %}
-        <a href="/download/{{ pdf_file }}">📥 Download PDF Report</a>
-    {% endif %}
+<div class="section">
+
+<h2>📄 Report</h2>
+
+<a class="btn" href="/download-report">
+📥 Download PDF Report
+</a>
+
 </div>
 
 {% endif %}
 
-<!-- HISTORY -->
-<div class="card">
-    <h2>📁 Scan History</h2>
 
-    {% if history %}
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>URL</th>
-            <th>Domain</th>
-            <th>Score</th>
-            <th>Level</th>
-        </tr>
+<div class="section">
 
-        {% for h in history %}
-        <tr>
-            <td>{{ h[0] }}</td>
-            <td>{{ h[1] }}</td>
-            <td>{{ h[2] }}</td>
-            <td>{{ h[3] }}</td>
-            <td>{{ h[4] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-    {% else %}
-        <p>No scan history yet.</p>
-    {% endif %}
+<h2>📁 Scan History</h2>
+
+<table>
+
+<tr>
+<th>ID</th>
+<th>URL</th>
+<th>Domain</th>
+<th>Score</th>
+<th>Level</th>
+</tr>
+
+{% if history %}
+
+{% for row in history %}
+
+<tr>
+
+<td>{{ row.id }}</td>
+
+<td>{{ row.url }}</td>
+
+<td>{{ row.domain }}</td>
+
+<td>{{ row.score }}</td>
+
+<td>{{ row.level }}</td>
+
+</tr>
+
+{% endfor %}
+
+{% else %}
+
+<tr>
+
+<td colspan="5">
+No scans available
+</td>
+
+</tr>
+
+{% endif %}
+
+</table>
+
 </div>
 
 </div>
-
-<!-- LOADING SCRIPT -->
-<script>
-document.querySelector("form").addEventListener("submit", function () {
-    document.getElementById("loading").style.display = "block";
-});
-</script>
 
 </body>
 </html>

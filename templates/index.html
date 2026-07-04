@@ -1,107 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberSentinel</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CyberSentinel</title>
 
-    <style>
-        body{
-            font-family: Arial, Helvetica, sans-serif;
-            background:#f4f7fa;
-            margin:0;
-            padding:0;
-        }
+<style>
+body{
+    font-family: Arial;
+    background:#f4f7fa;
+    margin:0;
+}
 
-        .container{
-            width:90%;
-            max-width:1100px;
-            margin:30px auto;
-            background:white;
-            padding:30px;
-            border-radius:10px;
-            box-shadow:0 0 10px rgba(0,0,0,.1);
-        }
+.container{
+    width:90%;
+    max-width:1100px;
+    margin:30px auto;
+    background:white;
+    padding:30px;
+    border-radius:10px;
+}
 
-        h1{
-            text-align:center;
-            color:#0b5394;
-        }
+h1{ text-align:center; color:#0b5394; }
 
-        h2{
-            color:#0b5394;
-            margin-top:30px;
-        }
+input{
+    width:75%;
+    padding:12px;
+}
 
-        h3{
-            color:#333;
-        }
+button{
+    padding:12px 20px;
+    background:#0b5394;
+    color:white;
+    border:none;
+}
 
-        input[type=text]{
-            width:75%;
-            padding:12px;
-            font-size:16px;
-            border:1px solid #ccc;
-            border-radius:5px;
-        }
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+}
 
-        button{
-            padding:12px 20px;
-            background:#0b5394;
-            color:white;
-            border:none;
-            border-radius:5px;
-            cursor:pointer;
-        }
+th{
+    background:#0b5394;
+    color:white;
+    padding:10px;
+}
 
-        button:hover{
-            background:#073763;
-        }
+td{
+    padding:10px;
+    border:1px solid #ddd;
+}
 
-        table{
-            width:100%;
-            border-collapse:collapse;
-            margin-top:15px;
-        }
+.section{ margin-top:30px; }
 
-        table,th,td{
-            border:1px solid #ddd;
-        }
-
-        th{
-            background:#0b5394;
-            color:white;
-            padding:10px;
-        }
-
-        td{
-            padding:10px;
-        }
-
-        ul{
-            margin-left:20px;
-        }
-
-        .btn{
-            display:inline-block;
-            margin-top:20px;
-            padding:12px 18px;
-            background:#28a745;
-            color:white;
-            text-decoration:none;
-            border-radius:5px;
-        }
-
-        .btn:hover{
-            background:#1f7d34;
-        }
-
-        .section{
-            margin-top:30px;
-        }
-    </style>
+.btn{
+    display:inline-block;
+    margin-top:15px;
+    padding:10px 15px;
+    background:green;
+    color:white;
+    text-decoration:none;
+}
+</style>
 
 </head>
+
 <body>
 
 <div class="container">
@@ -109,69 +73,41 @@
 <h1>🛡 CyberSentinel Security Scanner</h1>
 
 <form method="POST">
-
-<input
-type="text"
-name="url"
-placeholder="Enter website (example.com or https://example.com)"
-required>
-
-<button type="submit">
-Scan Website
-</button>
-
+<input type="text" name="url" placeholder="Enter website (example.com)" required>
+<button type="submit">Scan</button>
 </form>
 
 {% if result %}
 
 <div class="section">
-
 <h2>📊 Security Summary</h2>
 
 <p><b>Target:</b> {{ result.url }}</p>
-
 <p><b>Domain:</b> {{ result.domain }}</p>
-
 <p><b>IP:</b> {{ result.ip }}</p>
-
 <p><b>HTTP Status:</b> {{ result.http_status }}</p>
-
 <p><b>Risk Score:</b> {{ result.risk_score }}/100</p>
-
 <p><b>Risk Level:</b> {{ result.risk_level }}</p>
-
 </div>
 
-
 <div class="section">
-
-<h2>⚠️ Vulnerability Issues</h2>
+<h2>⚠️ Vulnerabilities</h2>
 
 {% if result.issues %}
-
 <ul>
-
 {% for issue in result.issues %}
 <li>{{ issue }}</li>
 {% endfor %}
-
 </ul>
-
 {% else %}
-
-<p>No major issues found.</p>
-
+<p>No issues found.</p>
 {% endif %}
-
 </div>
 
-
 <div class="section">
-
-<h2>🔍 Port Scan Results</h2>
+<h2>🔍 Port Scan</h2>
 
 <table>
-
 <tr>
 <th>Port</th>
 <th>Service</th>
@@ -180,48 +116,33 @@ Scan Website
 
 {% if result.ports %}
 
-{% for port in result.ports %}
-
+{% for p in result.ports %}
 <tr>
-<td>{{ port.port }}</td>
-<td>{{ port.service }}</td>
-<td>{{ port.status }}</td>
+<td>{{ p.port }}</td>
+<td>{{ p.service }}</td>
+<td>{{ p.status }}</td>
 </tr>
-
 {% endfor %}
 
 {% else %}
-
 <tr>
-<td colspan="3">No port scan data available</td>
+<td colspan="3">No data</td>
 </tr>
-
 {% endif %}
-
 </table>
-
 </div>
 
-
 <div class="section">
-
 <h2>📄 Report</h2>
-
-<a class="btn" href="/download-report">
-📥 Download PDF Report
-</a>
-
+<a class="btn" href="/download-report">Download PDF</a>
 </div>
 
 {% endif %}
 
-
 <div class="section">
-
 <h2>📁 Scan History</h2>
 
 <table>
-
 <tr>
 <th>ID</th>
 <th>URL</th>
@@ -233,37 +154,22 @@ Scan Website
 {% if history %}
 
 {% for row in history %}
-
 <tr>
-
-<td>{{ row.id }}</td>
-
-<td>{{ row.url }}</td>
-
-<td>{{ row.domain }}</td>
-
-<td>{{ row.score }}</td>
-
-<td>{{ row.level }}</td>
-
+<td>{{ row[0] }}</td>
+<td>{{ row[1] }}</td>
+<td>{{ row[2] }}</td>
+<td>{{ row[3] }}</td>
+<td>{{ row[4] }}</td>
 </tr>
-
 {% endfor %}
 
 {% else %}
-
 <tr>
-
-<td colspan="5">
-No scans available
-</td>
-
+<td colspan="5">No scans available</td>
 </tr>
-
 {% endif %}
 
 </table>
-
 </div>
 
 </div>

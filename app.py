@@ -129,22 +129,20 @@ def index():
         # -----------------------------
         # FINAL VERDICT SYSTEM (FIXED)
         # -----------------------------
-        if score is None or score < 0:
-            score = 50
+        # FINAL STATUS SYSTEM (CLEAN SOC STYLE)
 
-        if level == "SCAN FAILED":
-            verdict = "SCAN FAILED"
-            summary = "Unable to complete full security scan. Partial or no results available."
-        elif score >= 85:
-            verdict = "SAFE"
-            summary = "Strong security posture with minimal risk."
-        elif score >= 60:
-            verdict = "MODERATE"
-            summary = "Some vulnerabilities detected. Improvements recommended."
-        else:
-            verdict = "HIGH RISK"
-            summary = "Critical vulnerabilities detected. Immediate action required."
-
+if score >= 85:
+    risk_level = "LOW"
+    verdict = "SECURE"
+    summary = "Strong security posture with minimal risk."
+elif score >= 60:
+    risk_level = "MEDIUM"
+    verdict = "MODERATE RISK"
+    summary = "Some vulnerabilities detected. Improvements recommended."
+else:
+    risk_level = "HIGH"
+    verdict = "HIGH RISK"
+    summary = "Critical vulnerabilities detected. Immediate action required."
         # -----------------------------
         # FINAL RESULT OBJECT
         # -----------------------------

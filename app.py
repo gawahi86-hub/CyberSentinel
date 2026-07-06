@@ -145,9 +145,9 @@ def index():
             summary = "Significant vulnerabilities detected."
 
         else:
-            risk_level = "CRITICAL"
-            verdict = "CRITICAL RISK"
-            summary = "System is highly vulnerable."
+            risk_level = "ZERO"
+            verdict = "ZERO RISK"
+            summary = "System is Safe."
 
         # -----------------------------
         # FINAL RESULT

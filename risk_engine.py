@@ -1,48 +1,59 @@
 def analyze_security(headers, url, ssl_status):
 
     issues = []
-    score = 100  # start from safe baseline
+
+    # normalize score properly
+    score = 100
+
+    # normalize header values (IMPORTANT FIX)
+    def missing(value):
+        return value is None or value == "" or value == "None"
 
     # =========================
-    # SECURITY HEADERS (REAL IMPACT MODEL)
+    # SECURITY HEADERS
     # =========================
 
-    if not headers.get("content-security-policy"):
+    if missing(headers.get("content-security-policy")):
         issues.append("Missing Content-Security-Policy")
-        score -= 20
+        score -= 18
 
-    if not headers.get("strict-transport-security"):
+    if missing(headers.get("strict-transport-security")):
         issues.append("Missing HSTS")
         score -= 15
 
-    if not headers.get("x-content-type-options"):
+    if missing(headers.get("x-content-type-options")):
         issues.append("Missing X-Content-Type-Options")
         score -= 10
 
-    if not headers.get("referrer-policy"):
+    if missing(headers.get("referrer-policy")):
         issues.append("Missing Referrer-Policy")
-        score -= 10
+        score -= 8
 
-    if not headers.get("permissions-policy"):
+    if missing(headers.get("permissions-policy")):
         issues.append("Missing Permissions-Policy")
-        score -= 10
+        score -= 8
 
     # =========================
-    # SSL CHECK
+    # SSL CHECK (FIXED LOGIC)
     # =========================
 
-    if not ssl_status or ssl_status.lower() != "valid":
-        issues.append("Invalid or Missing SSL Certificate")
+    if ssl_status is None or ssl_status.lower() != "valid":
+        issues.append("SSL Certificate Issue")
         score -= 25
 
     # =========================
-    # SAFETY CLAMP
+    # SAFETY RULE (IMPORTANT FIX)
     # =========================
 
+    # prevent fake extreme values
+    if len(issues) == 0:
+        score = 95  # even secure sites are not perfect 100
+
+    # clamp score
     score = max(0, min(score, 100))
 
     # =========================
-    # FINAL RISK LEVEL (REAL MODEL)
+    # RISK LEVEL
     # =========================
 
     if score >= 80:

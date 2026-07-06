@@ -1,6 +1,0 @@
-flask
-whois
-dnspython
-reportlab
-requests
-gunicorn

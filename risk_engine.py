@@ -26,7 +26,7 @@ def analyze_security(headers, url, ssl_status):
     security_headers = {
         "Content-Security-Policy": (
             "Missing Content Security Policy header",
-            "Allows XSS (Cross-Site Scripting) attacks",
+            "Allows Cross-Site Scripting (XSS) attacks",
             "Add CSP header to restrict scripts and sources",
             15
         ),

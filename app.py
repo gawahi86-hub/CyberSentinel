@@ -129,7 +129,6 @@ def index():
         # -----------------------------
         # FINAL VERDICT SYSTEM (FIXED)
         # -----------------------------
-        # FINAL STATUS SYSTEM (CLEAN SOC STYLE)
 
 if score >= 85:
     risk_level = "LOW"

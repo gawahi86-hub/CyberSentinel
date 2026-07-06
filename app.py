@@ -9,6 +9,7 @@ from report import generate_pdf
 
 app = Flask(__name__)
 
+# Ensure reports folder exists
 os.makedirs("reports", exist_ok=True)
 
 # -----------------------------
@@ -77,11 +78,7 @@ def index():
         try:
             risk = analyze_security(headers, url, ssl_status)
         except Exception:
-            risk = {
-                "issues": [],
-                "score": 0,
-                "level": "ERROR"
-            }
+            risk = {"issues": [], "score": 0, "level": "ERROR"}
 
         issues_raw = risk.get("issues", [])
         score = risk.get("score", 0)
@@ -104,37 +101,57 @@ def index():
                 "severity": severity
             })
 
+        issue_count = len(issues_with_ai)
+
         # -----------------------------
-        # 🔥 FIX: ENSURE CONSISTENCY
+        # FIX: ENSURE CONSISTENCY
         # -----------------------------
-        if score < 85 and len(issues_with_ai) == 0:
+        if score < 85 and issue_count == 0:
             issues_with_ai.append({
                 "name": "Security Risk Detected (Automated)",
-                "description": "No explicit vulnerabilities listed but security posture is weak.",
+                "description": "No explicit vulnerabilities found but security score indicates weakness.",
                 "impact": "Possible misconfiguration or hidden vulnerabilities.",
                 "fix": "Run full security audit and enable OWASP recommended headers.",
                 "cvss_score": 5.0,
                 "severity": "MEDIUM"
             })
+            issue_count = 1
 
         # -----------------------------
-        # FINAL VERDICT LOGIC
+        # FINAL SOC-STYLE CLASSIFICATION
         # -----------------------------
-        if score >= 85:
+        if score == 0 and issue_count == 0:
+            risk_level = "UNKNOWN"
+            verdict = "NO DATA"
+            summary = "Security scan could not be completed or returned insufficient data."
+
+        elif score >= 85 and issue_count == 0:
             risk_level = "LOW"
-            verdict = "SECURE"
-            summary = "Strong security posture with minimal risk."
+            verdict = "SAFE"
+            summary = "No significant security weaknesses detected."
+
+        elif score >= 75:
+            risk_level = "LOW"
+            verdict = "MOSTLY SAFE"
+            summary = "Minor security improvements recommended."
+
         elif score >= 60:
             risk_level = "MEDIUM"
             verdict = "MODERATE RISK"
-            summary = "Some vulnerabilities detected. Improvements recommended."
-        else:
+            summary = "Security weaknesses detected. Hardening recommended."
+
+        elif score >= 40:
             risk_level = "HIGH"
             verdict = "HIGH RISK"
-            summary = "Critical vulnerabilities detected. Immediate action required."
+            summary = "Significant vulnerabilities detected. Immediate action required."
+
+        else:
+            risk_level = "CRITICAL"
+            verdict = "CRITICAL RISK"
+            summary = "Severe vulnerabilities detected. System is unsafe for production use."
 
         # -----------------------------
-        # FINAL RESULT
+        # FINAL RESULT OBJECT
         # -----------------------------
         result = {
             "url": url,
@@ -152,7 +169,7 @@ def index():
         }
 
         # -----------------------------
-        # PDF
+        # PDF GENERATION
         # -----------------------------
         try:
             generate_pdf(result)
@@ -170,6 +187,9 @@ def download_report():
     return send_file("reports/security_report.pdf", as_attachment=True)
 
 
+# -----------------------------
+# RUN APP
+# -----------------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)

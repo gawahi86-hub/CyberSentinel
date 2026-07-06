@@ -1,44 +1,69 @@
 def analyze_security(headers, url, ssl_status):
-    score = 100
+
     issues = []
-    reasons = []
-    recommendations = []
+    score = 0
 
-    # SECURITY HEADERS CHECK
-    required_headers = [
-        "Content-Security-Policy",
-        "Strict-Transport-Security",
-        "X-Content-Type-Options",
-        "Referrer-Policy",
-        "Permissions-Policy"
-    ]
+    headers = {k.lower(): v for k, v in headers.items()} if isinstance(headers, dict) else {}
 
-    for h in required_headers:
-        if h not in headers:
-            score -= 15
-            issues.append(f"Missing {h}")
-            reasons.append(f"{h} missing → OWASP A05: Security Misconfiguration")
-            recommendations.append(f"Enable {h} header")
+    # =========================
+    # SECURITY HEADER CHECKS
+    # =========================
 
+    if "content-security-policy" not in headers:
+        issues.append("Missing Content-Security-Policy")
+        score += 30
+
+    if "strict-transport-security" not in headers:
+        issues.append("Missing HSTS")
+        score += 25
+
+    if "x-content-type-options" not in headers:
+        issues.append("Missing X-Content-Type-Options")
+        score += 10
+
+    if "referrer-policy" not in headers:
+        issues.append("Missing Referrer-Policy")
+        score += 10
+
+    if "permissions-policy" not in headers:
+        issues.append("Missing Permissions-Policy")
+        score += 15
+
+    # =========================
     # SSL CHECK
-    if ssl_status != "valid":
-        score -= 20
-        issues.append("SSL Certificate issue")
-        reasons.append("Invalid SSL → Data interception risk")
-        recommendations.append("Fix SSL certificate")
+    # =========================
 
-    # FINAL RISK LEVEL
-    if score >= 80:
+    if not ssl_status or ssl_status.lower() != "valid":
+        issues.append("SSL Certificate Issue")
+        score += 20
+
+    # =========================
+    # FINAL SCORE LIMIT
+    # =========================
+
+    if score > 100:
+        score = 100
+
+    # =========================
+    # RISK LEVEL LOGIC (FIXED)
+    # =========================
+
+    if score <= 40:
         level = "LOW"
-    elif score >= 50:
+    elif score <= 70:
         level = "MEDIUM"
     else:
         level = "HIGH"
 
+    # =========================
+    # OPTIONAL SMART ADDITION
+    # =========================
+
+    if score == 0:
+        issues.append("No security issues detected")
+
     return {
-        "score": max(score, 0),
+        "score": score,
         "level": level,
-        "issues": issues,
-        "reasons": reasons,
-        "recommendations": recommendations
+        "issues": issues
     }

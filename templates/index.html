@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CyberSentinel Dashboard</title>
 
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 body{
     margin:0;
@@ -77,6 +80,7 @@ td{
     border-radius:5px;
 }
 
+/* DASHBOARD GRID */
 .grid{
     display:grid;
     grid-template-columns: repeat(4, 1fr);
@@ -96,10 +100,17 @@ td{
     color:#00d4ff;
 }
 
+/* RISK COLORS */
 .low{color:#00ff88;font-weight:bold;}
 .medium{color:#ffcc00;font-weight:bold;}
 .high{color:#ff4d4d;font-weight:bold;}
 
+canvas{
+    max-width:100%;
+    background:#0b0f1a;
+    padding:10px;
+    border-radius:10px;
+}
 </style>
 </head>
 
@@ -111,7 +122,7 @@ td{
 
 <div class="container">
 
-<!-- DASHBOARD ANALYTICS -->
+<!-- DASHBOARD -->
 <div class="card">
 <h2>📊 Dashboard Overview</h2>
 
@@ -136,6 +147,14 @@ td{
 <p class="high">{{ high }}</p>
 </div>
 </div>
+</div>
+
+<!-- CHARTS -->
+<div class="card">
+<h2>📈 Security Analytics</h2>
+
+<canvas id="riskChart"></canvas>
+<canvas id="scanChart" style="margin-top:20px;"></canvas>
 </div>
 
 <!-- SCAN FORM -->
@@ -166,6 +185,21 @@ td{
 <span class="high">HIGH</span>
 {% endif %}
 </p>
+</div>
+
+<!-- SOC INSIGHTS -->
+<div class="card">
+<h2>🧠 Security Insights</h2>
+
+<p>✔ Automated security scanning active</p>
+<p>✔ Risk engine evaluates vulnerabilities</p>
+<p>✔ Open ports and headers are key factors</p>
+
+{% if high > 0 %}
+<p class="high">⚠ High risk websites detected recently</p>
+{% else %}
+<p class="low">✔ No critical risks detected recently</p>
+{% endif %}
 </div>
 
 <!-- ISSUES -->
@@ -253,6 +287,32 @@ td{
 </div>
 
 </div>
+
+<!-- CHART SCRIPT -->
+<script>
+const riskChart = new Chart(document.getElementById('riskChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Low', 'Medium', 'High'],
+        datasets: [{
+            data: [{{ low }}, {{ medium }}, {{ high }}],
+            backgroundColor: ['#00ff88', '#ffcc00', '#ff4d4d']
+        }]
+    }
+});
+
+const scanChart = new Chart(document.getElementById('scanChart'), {
+    type: 'bar',
+    data: {
+        labels: ['Total Scans'],
+        datasets: [{
+            label: 'Scans',
+            data: [{{ total_scans }}],
+            backgroundColor: '#00d4ff'
+        }]
+    }
+});
+</script>
 
 </body>
 </html>

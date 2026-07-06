@@ -9,7 +9,7 @@
             margin: 0;
             font-family: Arial, sans-serif;
             background: #0b0f19;
-            color: #ffffff;
+            color: white;
         }
 
         .header {
@@ -31,7 +31,6 @@
             background: #111827;
             padding: 20px;
             border-radius: 10px;
-            margin-bottom: 20px;
         }
 
         input {
@@ -82,9 +81,9 @@
 
         li {
             background: #1f2937;
-            margin: 5px 0;
-            padding: 10px;
-            border-radius: 5px;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 8px;
         }
 
         .badge {
@@ -96,22 +95,27 @@
         .low { background: #16a34a; }
         .med { background: #f59e0b; }
         .highb { background: #dc2626; }
+
+        .small {
+            font-size: 13px;
+            color: #cbd5e1;
+        }
     </style>
 </head>
 
 <body>
 
 <div class="header">
-    🛡️ CyberSentinel SOC Dashboard
+    🛡️ CyberSentinel SOC Security Dashboard
 </div>
 
 <div class="container">
 
-    <!-- SCAN BOX -->
+    <!-- SCAN INPUT -->
     <div class="scan-box">
         <form method="POST">
             <input type="text" name="url" placeholder="Enter website URL">
-            <button type="submit">Run Security Scan</button>
+            <button type="submit">Run Scan</button>
         </form>
     </div>
 
@@ -137,28 +141,36 @@
 
     <!-- SUMMARY -->
     <div class="section">
-        <h3>Summary</h3>
+        <h3>Executive Summary</h3>
         <p>{{ result.final_summary }}</p>
     </div>
 
-    <!-- SYSTEM INFO -->
+    <!-- TARGET INFO -->
     <div class="section">
-        <h3>Target Info</h3>
+        <h3>Target Information</h3>
         <p><b>URL:</b> {{ result.url }}</p>
         <p><b>IP:</b> {{ result.ip }}</p>
-        <p><b>Status:</b> {{ result.http_status }}</p>
+        <p><b>HTTP Status:</b> {{ result.http_status }}</p>
     </div>
 
-    <!-- ISSUES -->
+    <!-- VULNERABILITIES -->
     <div class="section">
-        <h3>Security Issues</h3>
+        <h3>Security Vulnerabilities</h3>
 
         <ul>
         {% for issue in result.issues %}
             <li>
-                {{ issue.name }}
+                <b>{{ issue.name }}</b><br>
+
+                <div class="small">
+                    📖 {{ issue.description }}<br>
+                    ⚠️ {{ issue.impact }}<br>
+                    🛠 {{ issue.fix }}
+                </div>
+
                 <br>
-                CVSS: {{ issue.cvss_score }}
+
+                CVSS: {{ issue.cvss_score }} |
                 <span class="badge {% if issue.severity == 'LOW' %}low{% elif issue.severity == 'MEDIUM' %}med{% else %}highb{% endif %}">
                     {{ issue.severity }}
                 </span>
@@ -170,7 +182,7 @@
     <!-- PDF -->
     <div class="section">
         <a href="/download-report" style="color:#60a5fa;">
-            📄 Download PDF Report
+            📄 Download Professional PDF Report
         </a>
     </div>
 

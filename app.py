@@ -8,26 +8,29 @@ from report import generate_pdf
 
 app = Flask(__name__)
 
-# -------------------------
-# CVSS ENGINE (SAFE)
-# -------------------------
-def get_cvss(issue):
-    issue = issue.lower()
+# -----------------------------
+# CVSS ENGINE
+# -----------------------------
+def get_cvss(issue_name):
+    name = issue_name.lower()
 
-    if "ssl" in issue:
+    if "ssl" in name or "https" in name:
         return 9.0, "CRITICAL"
-    elif "content-security-policy" in issue:
+    elif "content security policy" in name or "csp" in name:
         return 7.5, "HIGH"
-    elif "x-frame-options" in issue:
+    elif "clickjacking" in name or "frame" in name:
         return 6.5, "MEDIUM"
-    elif "x-content-type-options" in issue:
+    elif "mime" in name:
         return 6.0, "MEDIUM"
-    elif "strict-transport-security" in issue:
-        return 5.5, "MEDIUM"
+    elif "hsts" in name:
+        return 6.5, "MEDIUM"
     else:
         return 5.0, "LOW"
 
 
+# -----------------------------
+# HOME ROUTE
+# -----------------------------
 @app.route("/", methods=["GET", "POST"])
 def index():
 
@@ -45,9 +48,9 @@ def index():
 
         domain = urlparse(url).netloc
 
-        # -------------------------
-        # SAFE SCANNER CALL
-        # -------------------------
+        # -----------------------------
+        # SCANNER (SAFE)
+        # -----------------------------
         scan = scan_website(url)
 
         ip = scan.get("ip", "Unknown")
@@ -56,50 +59,48 @@ def index():
         ports = scan.get("ports", [])
         http_status = scan.get("http_status", 0)
 
-        # -------------------------
-        # RISK ENGINE (SAFE)
-        # -------------------------
+        # -----------------------------
+        # RISK ENGINE
+        # -----------------------------
         risk = analyze_security(headers, url, ssl_status)
 
         issues_raw = risk.get("issues", [])
         score = risk.get("score", 0)
         level = risk.get("level", "UNKNOWN")
 
-        # -------------------------
-        # ENHANCED ISSUES WITH CVSS
-        # -------------------------
+        # -----------------------------
+        # BUILD VULNERABILITY REPORT
+        # -----------------------------
         issues_with_ai = []
 
         for issue in issues_raw:
-            cvss, severity = get_cvss(issue)
+            cvss, severity = get_cvss(issue["name"])
 
             issues_with_ai.append({
-                "name": issue,
+                "name": issue["name"],
+                "description": issue.get("description", ""),
+                "impact": issue.get("impact", ""),
+                "fix": issue.get("fix", ""),
                 "cvss_score": cvss,
-                "severity": severity,
-                "explanation": {
-                    "meaning": f"{issue} affects website security posture.",
-                    "risk": f"Severity {severity} (CVSS {cvss})",
-                    "fix": "Apply proper security hardening and update headers."
-                }
+                "severity": severity
             })
 
-        # -------------------------
+        # -----------------------------
         # FINAL VERDICT SYSTEM
-        # -------------------------
+        # -----------------------------
         if score >= 85:
             verdict = "SAFE"
             summary = "Strong security posture with minimal risk."
         elif score >= 60:
             verdict = "MODERATE"
-            summary = "Some security improvements required."
+            summary = "Some vulnerabilities detected. Improvements recommended."
         else:
             verdict = "HIGH RISK"
             summary = "Critical vulnerabilities detected. Immediate action required."
 
-        # -------------------------
+        # -----------------------------
         # FINAL RESULT OBJECT
-        # -------------------------
+        # -----------------------------
         result = {
             "url": url,
             "domain": domain,
@@ -115,9 +116,9 @@ def index():
             "safety_verdict": verdict
         }
 
-        # -------------------------
+        # -----------------------------
         # PDF GENERATION (SAFE)
-        # -------------------------
+        # -----------------------------
         try:
             generate_pdf(result)
         except Exception as e:
@@ -126,17 +127,17 @@ def index():
     return render_template("index.html", result=result)
 
 
-# -------------------------
+# -----------------------------
 # DOWNLOAD REPORT
-# -------------------------
+# -----------------------------
 @app.route("/download-report")
 def download_report():
     return send_file("reports/security_report.pdf", as_attachment=True)
 
 
-# -------------------------
-# RENDER SAFE ENTRY POINT
-# -------------------------
+# -----------------------------
+# RENDER ENTRY POINT
+# -----------------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)

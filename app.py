@@ -12,6 +12,7 @@ from scanner import (
 )
 
 from risk_engine import analyze_security
+from ai_engine import explain_issue   # ✅ AI ENGINE ADDED
 from database import init_db, save_scan, get_scans
 from report import generate_pdf
 
@@ -29,14 +30,6 @@ def clean_domain(value):
 def index():
     result = None
     history = get_scans()
-
-    # -----------------------
-    # ANALYTICS (DASHBOARD)
-    # -----------------------
-    total_scans = len(history)
-    low = len([h for h in history if h[4] == "LOW"])
-    medium = len([h for h in history if h[4] == "MEDIUM"])
-    high = len([h for h in history if h[4] == "HIGH"])
 
     if request.method == "POST":
         raw = request.form.get("url", "")
@@ -62,11 +55,18 @@ def index():
             ports = run_port_scan(domain)
             http_status = get_http_status(domain)
 
-            risk = analyze_security(
-                headers,
-                url,
-                ssl_info.get("status", "Unavailable")
-            )
+            risk = analyze_security(headers, url, ssl_info.get("status", "Unavailable"))
+
+            # =========================
+            # 🔥 AI EXPLANATION ENGINE
+            # =========================
+            issues_with_ai = [
+                {
+                    "name": issue,
+                    "explanation": explain_issue(issue)
+                }
+                for issue in risk["issues"]
+            ]
 
             result = {
                 "url": url,
@@ -80,28 +80,16 @@ def index():
                 "ports": ports,
                 "risk_score": risk["score"],
                 "risk_level": risk["level"],
-                "issues": risk.get("issues", []),
-                "reasons": risk.get("reasons", []),
-                "recommendations": risk.get("recommendations", [])
+                "issues": issues_with_ai   # ✅ FIXED HERE
             }
 
             save_scan(url, domain, risk["score"], risk["level"])
             history = get_scans()
 
-            # refresh analytics after scan
-            total_scans = len(history)
-            low = len([h for h in history if h[4] == "LOW"])
-            medium = len([h for h in history if h[4] == "MEDIUM"])
-            high = len([h for h in history if h[4] == "HIGH"])
-
     return render_template(
         "index.html",
         result=result,
-        history=history,
-        total_scans=total_scans,
-        low=low,
-        medium=medium,
-        high=high
+        history=history
     )
 
 

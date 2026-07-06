@@ -9,7 +9,9 @@ from report import generate_pdf
 
 app = Flask(__name__)
 
+# -----------------------------
 # Ensure reports folder exists (Render safe)
+# -----------------------------
 os.makedirs("reports", exist_ok=True)
 
 
@@ -68,10 +70,10 @@ def index():
                 "ssl": False,
                 "ports": [],
                 "risk_score": 0,
-                "risk_level": "SCAN FAILED",
+                "risk_level": "ERROR",
                 "issues": [],
-                "final_summary": "Unable to complete scan due to system error.",
-                "safety_verdict": "SCAN FAILED"
+                "final_summary": "Scanner failed due to internal error.",
+                "safety_verdict": "ERROR"
             })
 
         ip = scan.get("ip", "Unknown")
@@ -94,21 +96,25 @@ def index():
 
         issues_raw = risk.get("issues", [])
         score = risk.get("score", 50)
-        level = risk.get("level", "UNKNOWN")
 
         # -----------------------------
-        # NORMALIZE LEVEL (FIX)
+        # NORMALIZE LEVEL
         # -----------------------------
-        if level != "SCAN FAILED":
-            if score >= 85:
-                level = "LOW"
-            elif score >= 60:
-                level = "MEDIUM"
-            else:
-                level = "HIGH"
+        if score >= 85:
+            risk_level = "LOW"
+            verdict = "SECURE"
+            summary = "Strong security posture with minimal risk."
+        elif score >= 60:
+            risk_level = "MEDIUM"
+            verdict = "MODERATE RISK"
+            summary = "Some vulnerabilities detected. Improvements recommended."
+        else:
+            risk_level = "HIGH"
+            verdict = "HIGH RISK"
+            summary = "Critical vulnerabilities detected. Immediate action required."
 
         # -----------------------------
-        # BUILD ISSUES (SAFE LOOP)
+        # BUILD ISSUES
         # -----------------------------
         issues_with_ai = []
 
@@ -127,22 +133,6 @@ def index():
             })
 
         # -----------------------------
-        # FINAL VERDICT SYSTEM (FIXED)
-        # -----------------------------
-
-if score >= 85:
-    risk_level = "LOW"
-    verdict = "SECURE"
-    summary = "Strong security posture with minimal risk."
-elif score >= 60:
-    risk_level = "MEDIUM"
-    verdict = "MODERATE RISK"
-    summary = "Some vulnerabilities detected. Improvements recommended."
-else:
-    risk_level = "HIGH"
-    verdict = "HIGH RISK"
-    summary = "Critical vulnerabilities detected. Immediate action required."
-        # -----------------------------
         # FINAL RESULT OBJECT
         # -----------------------------
         result = {
@@ -154,14 +144,14 @@ else:
             "ssl": ssl_status,
             "ports": ports,
             "risk_score": score,
-            "risk_level": level,
+            "risk_level": risk_level,
             "issues": issues_with_ai,
             "final_summary": summary,
             "safety_verdict": verdict
         }
 
         # -----------------------------
-        # PDF GENERATION
+        # PDF GENERATION (SAFE)
         # -----------------------------
         try:
             generate_pdf(result)

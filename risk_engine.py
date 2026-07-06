@@ -65,7 +65,7 @@ def analyze_security(headers, url, ssl_status):
     elif score > 0:
         level = "LOW"
     else:
-        level = "CRITICAL"
+        level = "ZERO"
 
     # ---------------- SAFETY FIX ----------------
     # If no vulnerabilities but low score → fix inconsistency

@@ -1,27 +1,71 @@
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from datetime import datetime
 
-def generate_pdf(result):
 
-    doc = SimpleDocTemplate(
-        "reports/security_report.pdf",
-        pagesize=A4,
-        rightMargin=30,
-        leftMargin=30,
-        topMargin=30,
-        bottomMargin=30
-    )
+# -----------------------------
+# AI RECOMMENDATION ENGINE
+# -----------------------------
+def generate_ai_recommendations(data):
+
+    score = data.get("risk_score", 0)
+    issues = data.get("issues", [])
+
+    recommendations = []
+
+    if score >= 85:
+        recommendations.append("Maintain current security posture and continue monitoring regularly.")
+        recommendations.append("Enable automated threat detection and SIEM integration.")
+    elif score >= 60:
+        recommendations.append("Strengthen missing security headers (CSP, HSTS, X-Frame-Options).")
+        recommendations.append("Enable HTTPS enforcement across all endpoints.")
+    else:
+        recommendations.append("Immediate patching required for critical vulnerabilities.")
+        recommendations.append("Perform full penetration testing and incident response review.")
+
+    # Issue-based AI suggestions
+    for issue in issues:
+        name = issue.get("name", "").lower()
+
+        if "ssl" in name:
+            recommendations.append("Upgrade SSL/TLS configuration to TLS 1.2+ or TLS 1.3.")
+        if "csp" in name:
+            recommendations.append("Implement strict Content-Security-Policy headers.")
+        if "clickjacking" in name:
+            recommendations.append("Enable X-Frame-Options: DENY to prevent clickjacking attacks.")
+
+    return list(set(recommendations))
+
+
+# -----------------------------
+# PDF GENERATOR
+# -----------------------------
+def generate_pdf(data):
+
+    file_path = "reports/security_report.pdf"
+    doc = SimpleDocTemplate(file_path, pagesize=A4)
 
     styles = getSampleStyleSheet()
 
+    # -----------------------------
+    # BRANDING STYLES
+    # -----------------------------
     title_style = ParagraphStyle(
         "title",
         parent=styles["Title"],
         fontSize=24,
-        textColor=colors.HexColor("#0B2E4A"),
+        textColor=colors.HexColor("#0b5394"),
+        alignment=1,
+        spaceAfter=10
+    )
+
+    brand_style = ParagraphStyle(
+        "brand",
+        parent=styles["Normal"],
+        fontSize=12,
+        textColor=colors.HexColor("#1f2937"),
         alignment=1,
         spaceAfter=20
     )
@@ -29,151 +73,108 @@ def generate_pdf(result):
     header_style = ParagraphStyle(
         "header",
         parent=styles["Heading2"],
-        fontSize=14,
         textColor=colors.HexColor("#111827"),
         spaceAfter=10
     )
 
-    normal = styles["Normal"]
+    normal_style = styles["Normal"]
 
-    content = []
+    elements = []
 
-    # =========================
-    # COVER PAGE
-    # =========================
-    content.append(Paragraph("CYBERSENTINEL SOC SECURITY REPORT", title_style))
+    # -----------------------------
+    # BRAND HEADER
+    # -----------------------------
+    elements.append(Paragraph("🛡 CYBERSENTINEL", title_style))
+    elements.append(Paragraph("SOC Security Intelligence Report", brand_style))
+    elements.append(Spacer(1, 10))
 
-    content.append(Spacer(1, 10))
+    elements.append(Paragraph(f"Generated on: {datetime.now()}", normal_style))
+    elements.append(Spacer(1, 15))
 
-    content.append(Paragraph(
-        "<b>Type:</b> Automated Vulnerability & Risk Assessment",
-        normal
-    ))
+    # -----------------------------
+    # TARGET INFO
+    # -----------------------------
+    elements.append(Paragraph("Target Overview", header_style))
 
-    content.append(Paragraph(
-        f"<b>Date:</b> {datetime.now()}",
-        normal
-    ))
-
-    content.append(Paragraph(
-        f"<b>Target:</b> {result.get('url','')}",
-        normal
-    ))
-
-    content.append(PageBreak())
-
-    # =========================
-    # EXECUTIVE SUMMARY
-    # =========================
-    content.append(Paragraph("1. Executive Summary", header_style))
-
-    summary_box = f"""
-    <b>Final Verdict:</b> {result.get('safety_verdict','')}<br/>
-    <b>Risk Score:</b> {result.get('risk_score',0)}/100<br/>
-    <b>Risk Level:</b> {result.get('risk_level','')}<br/><br/>
-
-    <b>Summary:</b><br/>
-    {result.get('final_summary','')}
-    """
-
-    table = Table([[Paragraph(summary_box, normal)]])
-    table.setStyle(TableStyle([
-        ("BACKGROUND", (0,0), (-1,-1), colors.HexColor("#F3F4F6")),
-        ("BOX", (0,0), (-1,-1), 1, colors.HexColor("#9CA3AF")),
-        ("PADDING", (0,0), (-1,-1), 12),
-    ]))
-
-    content.append(table)
-    content.append(Spacer(1, 15))
-
-    # =========================
-    # TARGET INFORMATION
-    # =========================
-    content.append(Paragraph("2. Target Information", header_style))
-
-    target_data = [
-        ["URL", result.get("url","")],
-        ["Domain", result.get("domain","")],
-        ["IP Address", result.get("ip","")],
-        ["HTTP Status", str(result.get("http_status",""))],
-        ["SSL Enabled", str(result.get("ssl",""))],
+    target_table = [
+        ["URL", data.get("url", "")],
+        ["IP Address", data.get("ip", "")],
+        ["HTTP Status", str(data.get("http_status", ""))],
+        ["Risk Score", str(data.get("risk_score", ""))],
+        ["Verdict", data.get("safety_verdict", "")]
     ]
 
-    t = Table(target_data)
-    t.setStyle(TableStyle([
-        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#1F2937")),
-        ("TEXTCOLOR", (0,0), (-1,0), colors.white),
-        ("GRID", (0,0), (-1,-1), 0.5, colors.black),
-        ("BACKGROUND", (0,1), (-1,-1), colors.whitesmoke),
+    t1 = Table(target_table)
+    t1.setStyle(TableStyle([
+        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#dbeafe")),
+        ("GRID", (0,0), (-1,-1), 0.5, colors.grey),
         ("PADDING", (0,0), (-1,-1), 6),
     ]))
 
-    content.append(t)
-    content.append(Spacer(1, 15))
+    elements.append(t1)
+    elements.append(Spacer(1, 20))
 
-    # =========================
-    # VULNERABILITY ASSESSMENT
-    # =========================
-    content.append(Paragraph("3. Vulnerability Assessment", header_style))
+    # -----------------------------
+    # SUMMARY
+    # -----------------------------
+    elements.append(Paragraph("Executive Summary", header_style))
+    elements.append(Paragraph(data.get("final_summary", ""), normal_style))
+    elements.append(Spacer(1, 15))
 
-    issues = result.get("issues", [])
+    # -----------------------------
+    # VULNERABILITIES
+    # -----------------------------
+    elements.append(Paragraph("Security Vulnerabilities (CVSS Analysis)", header_style))
 
-    if issues:
+    issues = data.get("issues", [])
 
-        data = [["Vulnerability", "CVSS", "Severity"]]
+    if not issues:
+        elements.append(Paragraph("No vulnerabilities detected.", normal_style))
+    else:
 
-        for i in issues:
-            severity = i.get("severity","LOW")
+        table_data = [["Issue", "CVSS", "Severity"]]
 
-            data.append([
-                i.get("name",""),
-                str(i.get("cvss_score","")),
-                severity
+        for issue in issues:
+            table_data.append([
+                issue.get("name", ""),
+                str(issue.get("cvss_score", "")),
+                issue.get("severity", "")
             ])
 
-        vt = Table(data)
+        t2 = Table(table_data)
 
-        vt.setStyle(TableStyle([
-            ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#DC2626")),
+        t2.setStyle(TableStyle([
+            ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#1e3a8a")),
             ("TEXTCOLOR", (0,0), (-1,0), colors.white),
-            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
-            ("BACKGROUND", (0,1), (-1,-1), colors.HexColor("#F9FAFB")),
+            ("GRID", (0,0), (-1,-1), 0.5, colors.grey),
+            ("BACKGROUND", (0,1), (-1,-1), colors.HexColor("#f8fafc")),
             ("PADDING", (0,0), (-1,-1), 6),
         ]))
 
-        content.append(vt)
+        elements.append(t2)
 
-    else:
-        content.append(Paragraph("No vulnerabilities detected.", normal))
+    elements.append(Spacer(1, 20))
 
-    content.append(Spacer(1, 20))
+    # -----------------------------
+    # AI RECOMMENDATIONS (NEW)
+    # -----------------------------
+    elements.append(Paragraph("AI Security Recommendations", header_style))
 
-    # =========================
-    # SECURITY CONCLUSION
-    # =========================
-    content.append(Paragraph("4. Security Conclusion", header_style))
+    recommendations = generate_ai_recommendations(data)
 
-    conclusion = f"""
-    <b>Status:</b> {result.get('safety_verdict','')}<br/><br/>
+    for rec in recommendations:
+        elements.append(Paragraph(f"• {rec}", normal_style))
 
-    <b>Interpretation:</b><br/>
-    SAFE → Secure system<br/>
-    MODERATE → Improvements required<br/>
-    HIGH RISK → Immediate remediation required<br/><br/>
+    elements.append(Spacer(1, 20))
 
-    <b>Final Assessment:</b><br/>
-    {result.get('final_summary','')}
-    """
+    # -----------------------------
+    # FOOTER BRANDING
+    # -----------------------------
+    footer = Paragraph(
+        "CyberSentinel SOC Platform • Intelligent Security Analysis Engine",
+        brand_style
+    )
 
-    content.append(Paragraph(conclusion, normal))
+    elements.append(footer)
 
-    # =========================
-    # FOOTER
-    # =========================
-    content.append(Spacer(1, 20))
-    content.append(Paragraph(
-        "<i>Confidential SOC Report - Generated by CyberSentinel Security Engine</i>",
-        normal
-    ))
-
-    doc.build(content)
+    doc.build(elements)

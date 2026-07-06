@@ -71,7 +71,7 @@ def analyze_security(headers, url, ssl_status):
     # If no vulnerabilities but low score → fix inconsistency
     if len(vulnerabilities) == 0 and score < 100:
         level = "LOW"
-        score = 0
+        score = 100
 
     return {
         "score": score,

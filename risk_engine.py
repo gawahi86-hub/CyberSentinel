@@ -8,7 +8,8 @@ def analyze_security(headers, url, ssl_status):
             "name": name,
             "description": desc,
             "impact": impact,
-            "fix": fix
+            "fix": fix,
+            "severity_penalty": penalty
         })
         return penalty
 
@@ -17,7 +18,7 @@ def analyze_security(headers, url, ssl_status):
         score -= add_vuln(
             "Missing HTTPS (SSL/TLS)",
             "Website is not using encrypted connection.",
-            "Data can be intercepted (MITM attacks).",
+            "Data can be intercepted via MITM attacks.",
             "Install SSL certificate and force HTTPS redirect.",
             30
         )
@@ -25,14 +26,14 @@ def analyze_security(headers, url, ssl_status):
     # ---------------- SECURITY HEADERS ----------------
     security_headers = {
         "Content-Security-Policy": (
-            "Missing Content Security Policy header",
+            "Missing Content-Security-Policy header",
             "Allows Cross-Site Scripting (XSS) attacks",
             "Add CSP header to restrict scripts and sources",
             15
         ),
         "X-Frame-Options": (
             "Missing X-Frame-Options",
-            "Website vulnerable to clickjacking attacks",
+            "Vulnerable to clickjacking attacks",
             "Set X-Frame-Options: DENY or SAMEORIGIN",
             10
         ),
@@ -45,7 +46,7 @@ def analyze_security(headers, url, ssl_status):
         "Strict-Transport-Security": (
             "Missing HSTS header",
             "Downgrade attacks possible",
-            "Enable HSTS header",
+            "Enable HSTS with long max-age",
             15
         )
     }
@@ -54,7 +55,10 @@ def analyze_security(headers, url, ssl_status):
         if header not in headers:
             score -= add_vuln(*data)
 
-    # ---------------- FINAL RISK LEVEL ----------------
+    # ---------------- FINAL SCORE SAFETY ----------------
+    score = max(0, min(score, 100))
+
+    # ---------------- RISK LEVEL ----------------
     if score >= 85:
         level = "LOW"
     elif score >= 60:
@@ -63,7 +67,7 @@ def analyze_security(headers, url, ssl_status):
         level = "HIGH"
 
     return {
-        "score": max(score, 0),
+        "score": score,
         "level": level,
         "issues": vulnerabilities
     }

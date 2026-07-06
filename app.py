@@ -105,7 +105,7 @@ def index():
                 # -----------------------------
         # FIX: CONSISTENCY RULE
         # -----------------------------
-        if score < 85 and issue_count == 0:
+        if score > 85 and issue_count == 0:
             issues_with_ai.append({
                 "name": "Security Risk Detected (Automated)",
                 "description": "No explicit vulnerabilities found but score indicates weakness.",
@@ -124,30 +124,30 @@ def index():
             verdict = "NO DATA"
             summary = "Scan failed or returned no valid security data."
 
-        elif score >= 85:
+        elif score <= 85:
             risk_level = "LOW"
             verdict = "SAFE"
             summary = "System shows strong security posture."
 
-        elif score >= 75:
+        elif score <= 75:
             risk_level = "LOW"
             verdict = "MOSTLY SAFE"
             summary = "Minor improvements recommended."
 
-        elif score >= 60:
+        elif score <= 60:
             risk_level = "MEDIUM"
             verdict = "MODERATE RISK"
             summary = "Security weaknesses detected."
 
-        elif score >= 40:
+        elif score <= 40:
             risk_level = "HIGH"
             verdict = "HIGH RISK"
             summary = "Significant vulnerabilities detected."
 
         else:
-            risk_level = "ZERO"
-            verdict = "ZERO RISK"
-            summary = "System is Safe."
+            risk_level = "CRITICAL"
+            verdict = "CRITICAL RISK"
+            summary = "System is at high risk."
 
         # -----------------------------
         # FINAL RESULT

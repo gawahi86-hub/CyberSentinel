@@ -1,168 +1,115 @@
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
 from datetime import datetime
-import os
 
 def generate_pdf(result):
 
     file_path = "reports/security_report.pdf"
-    c = canvas.Canvas(file_path, pagesize=letter)
+    doc = SimpleDocTemplate(file_path, pagesize=A4)
 
-    width, height = letter
-    y = height - 60
+    styles = getSampleStyleSheet()
+    content = []
 
-    # =========================
-    # HEADER + LOGO
-    # =========================
-    logo_path = "reports/logo.png"
+    # -------------------------
+    # TITLE PAGE
+    # -------------------------
+    title = Paragraph("<b>CyberSentinel Security Assessment Report</b>", styles["Title"])
+    subtitle = Paragraph("Automated Cyber Risk Analysis Report", styles["Normal"])
+    date = Paragraph(f"Generated on: {datetime.now()}", styles["Normal"])
 
-    if os.path.exists(logo_path):
-        c.drawImage(logo_path, 40, height - 80, width=50, height=50, mask='auto')
+    content += [title, Spacer(1, 10), subtitle, Spacer(1, 10), date, Spacer(1, 20)]
 
-    c.setFillColor(colors.darkblue)
-    c.setFont("Helvetica-Bold", 18)
-    c.drawString(110, height - 50, "CyberSentinel Security Report")
+    content.append(PageBreak())
 
-    c.setFont("Helvetica", 9)
-    c.setFillColor(colors.grey)
-    c.drawString(110, height - 70, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-
-    y -= 100
-
-    # =========================
+    # -------------------------
     # TARGET INFO
-    # =========================
-    c.setFillColor(colors.black)
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, y, "1. Target Information")
+    # -------------------------
+    content.append(Paragraph("<b>1. Target Information</b>", styles["Heading2"]))
 
-    y -= 25
-    c.setFont("Helvetica", 10)
+    target_data = [
+        ["URL", result.get("url", "")],
+        ["Domain", result.get("domain", "")],
+        ["IP Address", result.get("ip", "")],
+        ["HTTP Status", str(result.get("http_status", ""))],
+        ["SSL Enabled", str(result.get("ssl", ""))]
+    ]
 
-    c.drawString(60, y, f"URL: {result['url']}")
-    y -= 15
-    c.drawString(60, y, f"Domain: {result['domain']}")
-    y -= 15
-    c.drawString(60, y, f"IP Address: {result['ip']}")
+    table = Table(target_data)
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.white),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+        ("BACKGROUND", (0, 1), (-1, -1), colors.lightgrey),
+    ]))
 
-    y -= 40
+    content += [table, Spacer(1, 20)]
 
-    # =========================
-    # RISK SCORE + CVSS STYLE
-    # =========================
-    score = result["risk_score"]
+    # -------------------------
+    # RISK SUMMARY
+    # -------------------------
+    content.append(Paragraph("<b>2. Risk Summary</b>", styles["Heading2"]))
 
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, y, "2. Risk Score (CVSS-Based Model)")
+    risk_data = [
+        ["Risk Score", str(result.get("risk_score", ""))],
+        ["Risk Level", result.get("risk_level", "")],
+        ["Final Verdict", result.get("safety_verdict", "")]
+    ]
 
-    y -= 25
+    risk_table = Table(risk_data)
+    risk_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.darkblue),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.white),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+        ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),
+    ]))
 
-    if score >= 80:
-        level = "LOW RISK"
-        color = colors.green
-        cvss = 2.5
-    elif score >= 50:
-        level = "MEDIUM RISK"
-        color = colors.orange
-        cvss = 6.5
+    content += [risk_table, Spacer(1, 20)]
+
+    # -------------------------
+    # ISSUES SECTION
+    # -------------------------
+    content.append(Paragraph("<b>3. Security Issues</b>", styles["Heading2"]))
+
+    issues = result.get("issues", [])
+
+    if issues:
+        issue_table_data = [["Issue", "CVSS", "Severity"]]
+
+        for issue in issues:
+            issue_table_data.append([
+                issue.get("name", ""),
+                str(issue.get("cvss_score", "")),
+                issue.get("severity", "")
+            ])
+
+        issue_table = Table(issue_table_data)
+
+        issue_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.darkred),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+            ("BACKGROUND", (0, 1), (-1, -1), colors.lightgrey),
+        ]))
+
+        content.append(issue_table)
     else:
-        level = "HIGH RISK"
-        color = colors.red
-        cvss = 9.2
+        content.append(Paragraph("No major issues detected.", styles["Normal"]))
 
-    c.setFillColor(color)
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(60, y, f"Score: {score}/100 | CVSS: {cvss} | {level}")
+    content.append(Spacer(1, 20))
 
-    y -= 40
+    # -------------------------
+    # FOOTER NOTE
+    # -------------------------
+    footer = Paragraph(
+        "<i>This report is automatically generated by CyberSentinel AI Security Engine.</i>",
+        styles["Normal"]
+    )
 
-    # =========================
-    # VULNERABILITY TABLE (WITH CVSS PER ISSUE)
-    # =========================
-    c.setFillColor(colors.black)
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, y, "3. Vulnerability Analysis (CVSS Mapping)")
+    content.append(footer)
 
-    y -= 25
-
-    # table header
-    c.setFillColor(colors.lightgrey)
-    c.rect(50, y, 500, 20, fill=1)
-
-    c.setFillColor(colors.black)
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(55, y + 5, "Issue")
-    c.drawString(260, y + 5, "CVSS")
-    c.drawString(340, y + 5, "Severity")
-
-    y -= 20
-
-    c.setFont("Helvetica", 9)
-
-    if result["issues"]:
-        for issue in result["issues"]:
-
-            if y < 120:
-                c.showPage()
-                y = height - 60
-
-            name = issue["name"]
-
-            # =========================
-            # CVSS LOGIC PER ISSUE
-            # =========================
-            if "CSP" in name or "HSTS" in name:
-                cvss_score = 8.5
-                severity = "CRITICAL"
-                color = colors.red
-            elif "X-Content-Type" in name or "Referrer" in name:
-                cvss_score = 6.5
-                severity = "MEDIUM"
-                color = colors.orange
-            else:
-                cvss_score = 4.0
-                severity = "LOW"
-                color = colors.green
-
-            c.setFillColor(colors.black)
-            c.drawString(55, y, name[:35])
-
-            c.drawString(260, y, str(cvss_score))
-
-            c.setFillColor(color)
-            c.drawString(340, y, severity)
-
-            y -= 15
-    else:
-        c.setFillColor(colors.green)
-        c.drawString(60, y, "No vulnerabilities detected.")
-        y -= 20
-
-    y -= 40
-
-    # =========================
-    # FINAL VERDICT BOX
-    # =========================
-    c.setFillColor(colors.darkblue)
-    c.rect(50, y, 500, 60, fill=1)
-
-    c.setFillColor(colors.white)
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(60, y + 40, "FINAL SECURITY VERDICT")
-
-    c.setFont("Helvetica", 10)
-    c.drawString(60, y + 20, result["final_summary"])
-
-    y -= 80
-
-    # =========================
-    # FOOTER
-    # =========================
-    c.setFillColor(colors.grey)
-    c.setFont("Helvetica", 8)
-    c.drawString(50, 30, "CyberSentinel - CVSS-Based Automated Security Assessment Report")
-
-    c.save()
-
-    return file_path
+    # -------------------------
+    # BUILD PDF
+    # -------------------------
+    doc.build(content)

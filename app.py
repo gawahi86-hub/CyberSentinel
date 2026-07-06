@@ -9,7 +9,6 @@ from report import generate_pdf
 
 app = Flask(__name__)
 
-# Ensure reports folder exists
 os.makedirs("reports", exist_ok=True)
 
 # -----------------------------
@@ -83,11 +82,11 @@ def index():
         issues_raw = risk.get("issues", [])
         score = risk.get("score", 0)
 
-        issues_with_ai = []
-
         # -----------------------------
         # BUILD ISSUES
         # -----------------------------
+        issues_with_ai = []
+
         for issue in issues_raw:
             name = issue.get("name", "Unknown Issue")
             cvss, severity = get_cvss(name)
@@ -104,7 +103,7 @@ def index():
         issue_count = len(issues_with_ai)
 
         # -----------------------------
-        # FIX: ENSURE CONSISTENCY
+        # CONSISTENCY FIX
         # -----------------------------
         if score < 85 and issue_count == 0:
             issues_with_ai.append({
@@ -118,14 +117,14 @@ def index():
             issue_count = 1
 
         # -----------------------------
-        # FINAL SOC-STYLE CLASSIFICATION
+        # FINAL SOC CLASSIFICATION (FIXED)
         # -----------------------------
         if score == 0 and issue_count == 0:
             risk_level = "UNKNOWN"
             verdict = "NO DATA"
-            summary = "Security scan could not be completed or returned insufficient data."
+            summary = "Security scan failed or returned no measurable data."
 
-        elif score >= 85 and issue_count == 0:
+        elif score >= 85:
             risk_level = "LOW"
             verdict = "SAFE"
             summary = "No significant security weaknesses detected."
@@ -133,7 +132,7 @@ def index():
         elif score >= 75:
             risk_level = "LOW"
             verdict = "MOSTLY SAFE"
-            summary = "Minor security improvements recommended."
+            summary = "Minor improvements recommended."
 
         elif score >= 60:
             risk_level = "MEDIUM"
@@ -151,7 +150,7 @@ def index():
             summary = "Severe vulnerabilities detected. System is unsafe for production use."
 
         # -----------------------------
-        # FINAL RESULT OBJECT
+        # FINAL RESULT
         # -----------------------------
         result = {
             "url": url,

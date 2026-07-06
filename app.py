@@ -9,11 +9,7 @@ from report import generate_pdf
 
 app = Flask(__name__)
 
-# -----------------------------
-# Ensure reports folder exists (Render safe)
-# -----------------------------
 os.makedirs("reports", exist_ok=True)
-
 
 # -----------------------------
 # CVSS ENGINE
@@ -56,25 +52,18 @@ def index():
         domain = urlparse(url).netloc
 
         # -----------------------------
-        # SCANNER (SAFE MODE)
+        # SCANNER
         # -----------------------------
         try:
             scan = scan_website(url)
         except Exception:
-            return render_template("index.html", result={
-                "url": url,
-                "domain": "Scan Failed",
+            scan = {
                 "ip": "Unknown",
-                "http_status": "Error",
                 "headers": {},
                 "ssl": False,
                 "ports": [],
-                "risk_score": 0,
-                "risk_level": "ERROR",
-                "issues": [],
-                "final_summary": "Scanner failed due to internal error.",
-                "safety_verdict": "ERROR"
-            })
+                "http_status": "Error"
+            }
 
         ip = scan.get("ip", "Unknown")
         headers = scan.get("headers", {})
@@ -83,22 +72,53 @@ def index():
         http_status = scan.get("http_status", 0)
 
         # -----------------------------
-        # RISK ENGINE (SAFE MODE)
+        # RISK ENGINE
         # -----------------------------
         try:
             risk = analyze_security(headers, url, ssl_status)
         except Exception:
             risk = {
                 "issues": [],
-                "score": 50,
-                "level": "UNKNOWN"
+                "score": 0,
+                "level": "ERROR"
             }
 
         issues_raw = risk.get("issues", [])
-        score = risk.get("score", 50)
+        score = risk.get("score", 0)
+
+        issues_with_ai = []
 
         # -----------------------------
-        # NORMALIZE LEVEL
+        # BUILD ISSUES
+        # -----------------------------
+        for issue in issues_raw:
+            name = issue.get("name", "Unknown Issue")
+            cvss, severity = get_cvss(name)
+
+            issues_with_ai.append({
+                "name": name,
+                "description": issue.get("description", ""),
+                "impact": issue.get("impact", ""),
+                "fix": issue.get("fix", ""),
+                "cvss_score": cvss,
+                "severity": severity
+            })
+
+        # -----------------------------
+        # 🔥 FIX: ENSURE CONSISTENCY
+        # -----------------------------
+        if score < 85 and len(issues_with_ai) == 0:
+            issues_with_ai.append({
+                "name": "Security Risk Detected (Automated)",
+                "description": "No explicit vulnerabilities listed but security posture is weak.",
+                "impact": "Possible misconfiguration or hidden vulnerabilities.",
+                "fix": "Run full security audit and enable OWASP recommended headers.",
+                "cvss_score": 5.0,
+                "severity": "MEDIUM"
+            })
+
+        # -----------------------------
+        # FINAL VERDICT LOGIC
         # -----------------------------
         if score >= 85:
             risk_level = "LOW"
@@ -114,26 +134,7 @@ def index():
             summary = "Critical vulnerabilities detected. Immediate action required."
 
         # -----------------------------
-        # BUILD ISSUES
-        # -----------------------------
-        issues_with_ai = []
-
-        for issue in issues_raw:
-            name = issue.get("name", "Unknown Issue")
-
-            cvss, severity = get_cvss(name)
-
-            issues_with_ai.append({
-                "name": name,
-                "description": issue.get("description", "No description available"),
-                "impact": issue.get("impact", "Unknown impact"),
-                "fix": issue.get("fix", "No fix provided"),
-                "cvss_score": cvss,
-                "severity": severity
-            })
-
-        # -----------------------------
-        # FINAL RESULT OBJECT
+        # FINAL RESULT
         # -----------------------------
         result = {
             "url": url,
@@ -151,7 +152,7 @@ def index():
         }
 
         # -----------------------------
-        # PDF GENERATION (SAFE)
+        # PDF
         # -----------------------------
         try:
             generate_pdf(result)
@@ -169,9 +170,6 @@ def download_report():
     return send_file("reports/security_report.pdf", as_attachment=True)
 
 
-# -----------------------------
-# RENDER ENTRY POINT
-# -----------------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)

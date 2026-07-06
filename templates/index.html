@@ -3,49 +3,60 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CyberSentinel</title>
+<title>CyberSentinel Dashboard</title>
 
 <style>
 body{
     margin:0;
-    font-family: Arial;
+    font-family: Arial, sans-serif;
     background:#0b0f1a;
     color:#e6e6e6;
 }
 
+/* HEADER */
+.header{
+    text-align:center;
+    padding:25px;
+    background:linear-gradient(90deg,#00d4ff,#0066ff);
+    color:black;
+    font-size:24px;
+    font-weight:bold;
+}
+
+/* CONTAINER */
 .container{
     width:90%;
     max-width:1100px;
-    margin:30px auto;
+    margin:20px auto;
 }
 
+/* CARDS */
 .card{
     background:#121a2a;
     padding:20px;
-    border-radius:10px;
+    border-radius:12px;
     margin-bottom:20px;
+    box-shadow:0 0 10px rgba(0,0,0,0.3);
 }
 
-h1{
-    text-align:center;
-    color:#00d4ff;
-}
-
+/* INPUT */
 input{
     width:70%;
     padding:12px;
-    border-radius:5px;
+    border-radius:6px;
+    border:none;
 }
 
 button{
     padding:12px 18px;
     background:#00d4ff;
     border:none;
-    font-weight:bold;
+    border-radius:6px;
     cursor:pointer;
-    border-radius:5px;
+    font-weight:bold;
 }
 
+/* TABLE */
 table{
     width:100%;
     border-collapse:collapse;
@@ -62,6 +73,7 @@ td{
     border-bottom:1px solid #2a2f3a;
 }
 
+/* BUTTON */
 .btn{
     display:inline-block;
     margin-top:10px;
@@ -71,15 +83,44 @@ td{
     text-decoration:none;
     border-radius:5px;
 }
+
+/* SUMMARY BOXES */
+.grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:15px;
+}
+
+.box{
+    background:#121a2a;
+    padding:15px;
+    border-radius:10px;
+    text-align:center;
+}
+
+.score{
+    font-size:22px;
+    font-weight:bold;
+    color:#00d4ff;
+}
+
+/* RISK BADGES */
+.low{color:#00ff88;font-weight:bold;}
+.medium{color:#ffcc00;font-weight:bold;}
+.high{color:#ff4d4d;font-weight:bold;}
+
 </style>
 </head>
 
 <body>
 
+<div class="header">
+🛡 CyberSentinel Security Dashboard
+</div>
+
 <div class="container">
 
-<h1>🛡 CyberSentinel Dashboard</h1>
-
+<!-- FORM -->
 <div class="card">
 <form method="POST">
 <input type="text" name="url" placeholder="Enter website">
@@ -89,16 +130,35 @@ td{
 
 {% if result %}
 
-<div class="card">
-<h2>📊 Security Summary</h2>
+<!-- SUMMARY CARDS -->
+<div class="grid">
 
-<p><b>Target:</b> {{ result.url }}</p>
-<p><b>Domain:</b> {{ result.domain }}</p>
-<p><b>IP:</b> {{ result.ip }}</p>
-<p><b>Risk Score:</b> {{ result.risk_score }}/100</p>
-<p><b>Risk Level:</b> {{ result.risk_level }}</p>
+<div class="box">
+<h3>Domain</h3>
+<p>{{ result.domain }}</p>
 </div>
 
+<div class="box">
+<h3>Risk Score</h3>
+<p class="score">{{ result.risk_score }}/100</p>
+</div>
+
+<div class="box">
+<h3>Risk Level</h3>
+<p>
+{% if result.risk_level == "LOW" %}
+<span class="low">{{ result.risk_level }}</span>
+{% elif result.risk_level == "MEDIUM" %}
+<span class="medium">{{ result.risk_level }}</span>
+{% else %}
+<span class="high">{{ result.risk_level }}</span>
+{% endif %}
+</p>
+</div>
+
+</div>
+
+<!-- ISSUES -->
 <div class="card">
 <h2>⚠️ Issues</h2>
 
@@ -113,6 +173,7 @@ td{
 {% endif %}
 </div>
 
+<!-- PORTS -->
 <div class="card">
 <h2>🔍 Port Scan</h2>
 
@@ -130,21 +191,19 @@ td{
 <td>{{ p.status }}</td>
 </tr>
 {% endfor %}
+
 </table>
 </div>
 
-<!-- ✅ FIXED DOWNLOAD BUTTON -->
+<!-- DOWNLOAD -->
 <div class="card">
 <h2>📄 Report</h2>
-
-<a class="btn" href="/download-report">
-📥 Download PDF Report
-</a>
-
+<a class="btn" href="/download-report">Download PDF</a>
 </div>
 
 {% endif %}
 
+<!-- HISTORY -->
 <div class="card">
 <h2>📁 Scan History</h2>
 
@@ -166,6 +225,7 @@ td{
 <td>{{ row[4] }}</td>
 </tr>
 {% endfor %}
+
 </table>
 
 </div>

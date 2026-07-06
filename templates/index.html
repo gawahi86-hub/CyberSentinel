@@ -13,7 +13,6 @@ body{
     color:#e6e6e6;
 }
 
-/* HEADER */
 .header{
     text-align:center;
     padding:25px;
@@ -23,23 +22,19 @@ body{
     font-weight:bold;
 }
 
-/* CONTAINER */
 .container{
     width:90%;
     max-width:1100px;
     margin:20px auto;
 }
 
-/* CARDS */
 .card{
     background:#121a2a;
     padding:20px;
     border-radius:12px;
     margin-bottom:20px;
-    box-shadow:0 0 10px rgba(0,0,0,0.3);
 }
 
-/* INPUT */
 input{
     width:70%;
     padding:12px;
@@ -56,7 +51,6 @@ button{
     font-weight:bold;
 }
 
-/* TABLE */
 table{
     width:100%;
     border-collapse:collapse;
@@ -73,7 +67,6 @@ td{
     border-bottom:1px solid #2a2f3a;
 }
 
-/* BUTTON */
 .btn{
     display:inline-block;
     margin-top:10px;
@@ -84,11 +77,10 @@ td{
     border-radius:5px;
 }
 
-/* SUMMARY BOXES */
 .grid{
     display:grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap:15px;
+    grid-template-columns: repeat(4, 1fr);
+    gap:10px;
 }
 
 .box{
@@ -104,7 +96,6 @@ td{
     color:#00d4ff;
 }
 
-/* RISK BADGES */
 .low{color:#00ff88;font-weight:bold;}
 .medium{color:#ffcc00;font-weight:bold;}
 .high{color:#ff4d4d;font-weight:bold;}
@@ -120,7 +111,34 @@ td{
 
 <div class="container">
 
-<!-- FORM -->
+<!-- DASHBOARD ANALYTICS -->
+<div class="card">
+<h2>📊 Dashboard Overview</h2>
+
+<div class="grid">
+<div class="box">
+<h3>Total Scans</h3>
+<p class="score">{{ total_scans }}</p>
+</div>
+
+<div class="box">
+<h3>Low Risk</h3>
+<p class="low">{{ low }}</p>
+</div>
+
+<div class="box">
+<h3>Medium Risk</h3>
+<p class="medium">{{ medium }}</p>
+</div>
+
+<div class="box">
+<h3>High Risk</h3>
+<p class="high">{{ high }}</p>
+</div>
+</div>
+</div>
+
+<!-- SCAN FORM -->
 <div class="card">
 <form method="POST">
 <input type="text" name="url" placeholder="Enter website">
@@ -130,32 +148,24 @@ td{
 
 {% if result %}
 
-<!-- SUMMARY CARDS -->
-<div class="grid">
+<!-- SUMMARY -->
+<div class="card">
+<h2>📊 Security Summary</h2>
 
-<div class="box">
-<h3>Domain</h3>
-<p>{{ result.domain }}</p>
-</div>
+<p><b>Target:</b> {{ result.url }}</p>
+<p><b>Domain:</b> {{ result.domain }}</p>
+<p><b>IP:</b> {{ result.ip }}</p>
+<p><b>Risk Score:</b> {{ result.risk_score }}/100</p>
 
-<div class="box">
-<h3>Risk Score</h3>
-<p class="score">{{ result.risk_score }}/100</p>
-</div>
-
-<div class="box">
-<h3>Risk Level</h3>
-<p>
+<p><b>Risk Level:</b>
 {% if result.risk_level == "LOW" %}
-<span class="low">{{ result.risk_level }}</span>
+<span class="low">LOW</span>
 {% elif result.risk_level == "MEDIUM" %}
-<span class="medium">{{ result.risk_level }}</span>
+<span class="medium">MEDIUM</span>
 {% else %}
-<span class="high">{{ result.risk_level }}</span>
+<span class="high">HIGH</span>
 {% endif %}
 </p>
-</div>
-
 </div>
 
 <!-- ISSUES -->
@@ -171,9 +181,23 @@ td{
 {% else %}
 <p>No issues found</p>
 {% endif %}
+
+<h3>🧠 Explanation</h3>
+<ul>
+{% for r in result.reasons %}
+<li>{{ r }}</li>
+{% endfor %}
+</ul>
+
+<h3>📌 Recommendations</h3>
+<ul>
+{% for rec in result.recommendations %}
+<li>{{ rec }}</li>
+{% endfor %}
+</ul>
 </div>
 
-<!-- PORTS -->
+<!-- PORT SCAN -->
 <div class="card">
 <h2>🔍 Port Scan</h2>
 
@@ -191,11 +215,10 @@ td{
 <td>{{ p.status }}</td>
 </tr>
 {% endfor %}
-
 </table>
 </div>
 
-<!-- DOWNLOAD -->
+<!-- PDF -->
 <div class="card">
 <h2>📄 Report</h2>
 <a class="btn" href="/download-report">Download PDF</a>
@@ -225,7 +248,6 @@ td{
 <td>{{ row[4] }}</td>
 </tr>
 {% endfor %}
-
 </table>
 
 </div>

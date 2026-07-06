@@ -30,6 +30,14 @@ def index():
     result = None
     history = get_scans()
 
+    # -----------------------
+    # ANALYTICS (DASHBOARD)
+    # -----------------------
+    total_scans = len(history)
+    low = len([h for h in history if h[4] == "LOW"])
+    medium = len([h for h in history if h[4] == "MEDIUM"])
+    high = len([h for h in history if h[4] == "HIGH"])
+
     if request.method == "POST":
         raw = request.form.get("url", "")
         domain = clean_domain(raw)
@@ -72,8 +80,6 @@ def index():
                 "ports": ports,
                 "risk_score": risk["score"],
                 "risk_level": risk["level"],
-
-                # NEW UPGRADE FIELDS
                 "issues": risk.get("issues", []),
                 "reasons": risk.get("reasons", []),
                 "recommendations": risk.get("recommendations", [])
@@ -82,10 +88,20 @@ def index():
             save_scan(url, domain, risk["score"], risk["level"])
             history = get_scans()
 
+            # refresh analytics after scan
+            total_scans = len(history)
+            low = len([h for h in history if h[4] == "LOW"])
+            medium = len([h for h in history if h[4] == "MEDIUM"])
+            high = len([h for h in history if h[4] == "HIGH"])
+
     return render_template(
         "index.html",
         result=result,
-        history=history
+        history=history,
+        total_scans=total_scans,
+        low=low,
+        medium=medium,
+        high=high
     )
 
 

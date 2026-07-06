@@ -59,11 +59,11 @@ def analyze_security(headers, url, ssl_status):
 
     # ---------------- LEVEL (SAFE LOGIC) ----------------
     if score >= 85:
-        level = "LOW"
+        level = "HIGH"
     elif score >= 60:
         level = "MEDIUM"
     elif score > 0:
-        level = "HIGH"
+        level = "LOW"
     else:
         level = "CRITICAL"
 

@@ -1,28 +1,26 @@
 def analyze_security(headers, url, ssl_status):
 
-    score = 100
     issues = []
+    score = 100
 
     # SSL check
-    if ssl_status != "valid":
+    if not ssl_status:
+        issues.append("Missing SSL (HTTPS)")
         score -= 25
-        issues.append("SSL certificate issue detected")
 
-    # Security headers check
+    # Security headers checks
     required_headers = [
         "Content-Security-Policy",
-        "Strict-Transport-Security",
-        "X-Content-Type-Options",
-        "Referrer-Policy",
-        "Permissions-Policy"
+        "X-Frame-Options",
+        "X-Content-Type-Options"
     ]
 
     for h in required_headers:
         if h not in headers:
+            issues.append(f"Missing security header: {h}")
             score -= 10
-            issues.append(f"Missing {h}")
 
-    # final logic
+    # Final level
     if score >= 80:
         level = "LOW"
     elif score >= 50:

@@ -1,73 +1,45 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>CyberSentinel</title>
-
-<style>
-body {font-family: Arial; background:#0b0f1a; color:white;}
-.container {width:90%; margin:auto;}
-.card {background:#121a2a; padding:20px; margin:15px 0; border-radius:10px;}
-input {width:70%; padding:10px;}
-button {padding:10px; background:#00d4ff; border:none; cursor:pointer;}
-.red {color:red;}
-.green {color:lime;}
-.orange {color:orange;}
-</style>
-
+    <title>CyberSentinel Scanner</title>
 </head>
-
 <body>
 
-<div class="container">
-
-<h1>🛡 CyberSentinel Dashboard</h1>
+<h1>CyberSentinel Security Scanner</h1>
 
 <form method="POST">
-<input name="url" placeholder="Enter website">
-<button>Scan</button>
+    <input type="text" name="url" placeholder="Enter website URL">
+    <button type="submit">Scan</button>
 </form>
 
 {% if result %}
 
-<div class="card">
-<h2>📊 Security Summary</h2>
-<p>URL: {{ result.url }}</p>
-<p>Domain: {{ result.domain }}</p>
-<p>IP: {{ result.ip }}</p>
-<p>Risk Score: {{ result.risk_score }}/100</p>
-<p>Risk Level: {{ result.risk_level }}</p>
-</div>
+<h2>Scan Result</h2>
 
-<div class="card">
-<h2>🚨 Security Verdict</h2>
+<p><b>URL:</b> {{ result.url }}</p>
+<p><b>IP:</b> {{ result.ip }}</p>
+<p><b>Status:</b> {{ result.http_status }}</p>
+<p><b>Risk Score:</b> {{ result.risk_score }}</p>
+<p><b>Risk Level:</b> {{ result.risk_level }}</p>
+<p><b>Verdict:</b> {{ result.safety_verdict }}</p>
 
-{% if result.safety_verdict == "SAFE" %}
-<p class="green">🟢 SAFE TO USE</p>
-{% elif result.safety_verdict == "CAUTION" %}
-<p class="orange">🟠 USE WITH CAUTION</p>
-{% else %}
-<p class="red">🔴 NOT SAFE</p>
-{% endif %}
-
+<h3>Summary</h3>
 <p>{{ result.final_summary }}</p>
-</div>
 
-<div class="card">
-<h2>⚠ Vulnerabilities</h2>
-
-{% for i in result.issues %}
-<p><b>{{ i.name }}</b> - {{ i.explanation.meaning }}</p>
+<h3>Issues Found</h3>
+<ul>
+{% for issue in result.issues %}
+    <li>
+        <b>{{ issue.name }}</b> |
+        CVSS: {{ issue.cvss_score }} |
+        {{ issue.severity }}
+    </li>
 {% endfor %}
+</ul>
 
-</div>
-
-<div class="card">
-<a href="/download-report">📥 Download PDF Report</a>
-</div>
+<a href="/download-report">Download PDF Report</a>
 
 {% endif %}
-
-</div>
 
 </body>
 </html>

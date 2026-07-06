@@ -1,28 +1,28 @@
 import socket
+import requests
 
-def run_port_scan(domain):
-    ports = [80, 443]
-    results = []
+def scan_website(url):
 
     try:
-        ip = socket.gethostbyname(domain)
-    except:
-        return []
+        response = requests.get(url, timeout=5)
 
-    for port in ports:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
+        ip = socket.gethostbyname(url.replace("https://", "").replace("http://", ""))
 
-        try:
-            result = sock.connect_ex((ip, port))
-            results.append({
-                "port": port,
-                "service": "HTTP" if port == 80 else "HTTPS",
-                "status": "open" if result == 0 else "closed"
-            })
-        except:
-            pass
-        finally:
-            sock.close()
+        headers = dict(response.headers)
 
-    return results
+        return {
+            "ip": ip,
+            "headers": headers,
+            "ssl": url.startswith("https"),
+            "ports": [80, 443],
+            "http_status": response.status_code
+        }
+
+    except Exception:
+        return {
+            "ip": "Unknown",
+            "headers": {},
+            "ssl": False,
+            "ports": [],
+            "http_status": 0
+        }

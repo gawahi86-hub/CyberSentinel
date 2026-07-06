@@ -1,61 +1,28 @@
 def analyze_security(headers, url, ssl_status):
 
+    score = 100
     issues = []
 
-    # normalize score properly
-    score = 100
-
-    # normalize header values (IMPORTANT FIX)
-    def missing(value):
-        return value is None or value == "" or value == "None"
-
-    # =========================
-    # SECURITY HEADERS
-    # =========================
-
-    if missing(headers.get("content-security-policy")):
-        issues.append("Missing Content-Security-Policy")
-        score -= 18
-
-    if missing(headers.get("strict-transport-security")):
-        issues.append("Missing HSTS")
-        score -= 15
-
-    if missing(headers.get("x-content-type-options")):
-        issues.append("Missing X-Content-Type-Options")
-        score -= 10
-
-    if missing(headers.get("referrer-policy")):
-        issues.append("Missing Referrer-Policy")
-        score -= 8
-
-    if missing(headers.get("permissions-policy")):
-        issues.append("Missing Permissions-Policy")
-        score -= 8
-
-    # =========================
-    # SSL CHECK (FIXED LOGIC)
-    # =========================
-
-    if ssl_status is None or ssl_status.lower() != "valid":
-        issues.append("SSL Certificate Issue")
+    # SSL check
+    if ssl_status != "valid":
         score -= 25
+        issues.append("SSL certificate issue detected")
 
-    # =========================
-    # SAFETY RULE (IMPORTANT FIX)
-    # =========================
+    # Security headers check
+    required_headers = [
+        "Content-Security-Policy",
+        "Strict-Transport-Security",
+        "X-Content-Type-Options",
+        "Referrer-Policy",
+        "Permissions-Policy"
+    ]
 
-    # prevent fake extreme values
-    if len(issues) == 0:
-        score = 95  # even secure sites are not perfect 100
+    for h in required_headers:
+        if h not in headers:
+            score -= 10
+            issues.append(f"Missing {h}")
 
-    # clamp score
-    score = max(0, min(score, 100))
-
-    # =========================
-    # RISK LEVEL
-    # =========================
-
+    # final logic
     if score >= 80:
         level = "LOW"
     elif score >= 50:
@@ -64,7 +31,7 @@ def analyze_security(headers, url, ssl_status):
         level = "HIGH"
 
     return {
-        "score": score,
+        "score": max(score, 0),
         "level": level,
         "issues": issues
     }

@@ -1,131 +1,129 @@
 from flask import Flask, render_template, request, send_file
-from urllib.parse import urlparse
 import os
+import whois
+import dns.resolver
 
-from scanner import scan_website
+from scanner import (
+    get_ip,
+    get_http_status,
+    get_security_headers,
+    get_ssl_info,
+    run_port_scan
+)
+
 from risk_engine import analyze_security
+from database import init_db, save_scan, get_scans
 from report import generate_pdf
 
 app = Flask(__name__)
+init_db()
 
-# =========================
-# CVSS Helper Function
-# =========================
-def get_cvss(issue):
-    issue = issue.lower()
 
-    if "ssl" in issue or "https" in issue:
-        return 7.5, "HIGH"
-    elif "header" in issue:
-        return 5.0, "MEDIUM"
-    elif "port" in issue:
-        return 6.5, "MEDIUM"
-    elif "dns" in issue:
-        return 4.0, "LOW"
-    elif "ip" in issue:
-        return 3.0, "LOW"
-    else:
-        return 5.0, "MEDIUM"
+def clean_domain(value):
+    value = (value or "").strip()
+    value = value.replace("https://", "").replace("http://", "")
+    return value.split("/")[0]
 
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-
     result = None
+    history = get_scans()
 
     if request.method == "POST":
+        raw = request.form.get("url", "")
+        domain = clean_domain(raw)
 
-        url = request.form["url"]
+        if domain:
+            url = "https://" + domain
 
-        if not url.startswith("http"):
-            url = "https://" + url
+            ip = get_ip(domain)
 
-        domain = urlparse(url).netloc
+            # ✅ SAFE WHOIS
+            try:
+                whois_info = str(whois.whois(domain))
+            except:
+                whois_info = "Unavailable"
 
-        # =========================
-        # SCANNER
-        # =========================
-        scan = scan_website(url)
+            # ✅ SAFE DNS (NO FREEZE ON RENDER)
+            try:
+                answers = dns.resolver.resolve(domain, "A", lifetime=2)
+                dns_records = [str(x) for x in answers]
+            except:
+                dns_records = []
 
-        headers = scan["headers"]
-        ssl_status = scan["ssl"]
-        ports = scan["ports"]
-        http_status = scan["http_status"]
-        ip = scan["ip"]
+            headers = get_security_headers(domain)
+            ssl_info = get_ssl_info(domain)
+            ports = run_port_scan(domain)
+            http_status = get_http_status(domain)
 
-        # =========================
-        # RISK ENGINE
-        # =========================
-        risk = analyze_security(headers, url, ssl_status)
+            risk = analyze_security(headers, url, ssl_info.get("status", "Unavailable"))
 
-        # =========================
-        # CVSS ENRICHMENT
-        # =========================
-        issues_with_ai = []
+            result = {
+                "url": url,
+                "domain": domain,
+                "ip": ip,
+                "whois": whois_info,
+                "dns": dns_records,
+                "http_status": http_status,
+                "headers": headers,
+                "ssl": ssl_info,
+                "ports": ports,
+                "risk_score": risk["score"],
+                "risk_level": risk["level"],
+                "issues": risk["issues"],
+            }
 
-        for issue in risk["issues"]:
-            score, severity = get_cvss(issue)
+            save_scan(url, domain, risk["score"], risk["level"])
+            history = get_scans()
 
-            issues_with_ai.append({
-                "name": issue,
-                "cvss_score": score,
-                "severity": severity,
-                "explanation": {
-                    "meaning": f"{issue} affects website security posture.",
-                    "risk": f"Severity: {severity} (CVSS {score})",
-                    "fix": "Apply proper security hardening and configuration updates."
-                }
-            })
-
-        # =========================
-        # FINAL VERDICT SYSTEM
-        # =========================
-        score = risk["score"]
-
-        if score >= 80:
-            final_summary = "SAFE TO USE – Strong security posture with minimal risk."
-            safety_verdict = "SAFE"
-        elif score >= 50:
-            final_summary = "USE WITH CAUTION – Moderate security weaknesses detected."
-            safety_verdict = "CAUTION"
-        else:
-            final_summary = "NOT SAFE – Significant vulnerabilities detected."
-            safety_verdict = "NOT SAFE"
-
-        # =========================
-        # FINAL RESULT OBJECT
-        # =========================
-        result = {
-            "url": url,
-            "domain": domain,
-            "ip": ip,
-            "http_status": http_status,
-            "headers": headers,
-            "ssl": ssl_status,
-            "ports": ports,
-            "risk_score": score,
-            "risk_level": risk["level"],
-            "issues": issues_with_ai,
-            "final_summary": final_summary,
-            "safety_verdict": safety_verdict
-        }
-
-        # =========================
-        # PDF GENERATION
-        # =========================
-        generate_pdf(result)
-
-    return render_template("index.html", result=result)
+    return render_template(
+        "index.html",
+        result=result,
+        history=history
+    )
 
 
+# 🚀 FIXED DOWNLOAD ROUTE (STABLE + SAFE FILE NAME)
 @app.route("/download-report")
 def download_report():
-    return send_file("reports/security_report.pdf", as_attachment=True)
+    history = get_scans()
+
+    if not history:
+        return "No scan data available", 404
+
+    latest = history[0]
+
+    url = latest[1]
+    domain = latest[2]
+    score = latest[3]
+    level = latest[4]
+
+    result = {
+        "url": url,
+        "domain": domain,
+        "ip": "",
+        "risk_score": score,
+        "risk_level": level,
+        "issues": []
+    }
+
+    pdf_path = generate_pdf(result)
+
+    if not pdf_path:
+        return "PDF generation failed", 500
+
+    # ✅ CLEAN FILE NAME
+    safe_domain = domain.replace(".", "_")
+    filename = f"CyberSentinel_{safe_domain}_Report.pdf"
+
+    return send_file(
+        pdf_path,
+        as_attachment=True,
+        download_name=filename
+    )
 
 
-# =========================
-# RENDER SAFE SERVER START
-# =========================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)

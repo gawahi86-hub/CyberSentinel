@@ -9,6 +9,7 @@ from report import generate_pdf
 
 app = Flask(__name__)
 
+# Ensure reports folder exists
 os.makedirs("reports", exist_ok=True)
 
 # -----------------------------
@@ -19,7 +20,7 @@ def get_cvss(issue_name):
 
     if "ssl" in name or "https" in name:
         return 9.0, "CRITICAL"
-    elif "content security policy" in name or "csp" in name:
+    elif "csp" in name:
         return 7.5, "HIGH"
     elif "clickjacking" in name or "frame" in name:
         return 6.5, "MEDIUM"
@@ -52,7 +53,7 @@ def index():
         domain = urlparse(url).netloc
 
         # -----------------------------
-        # SCANNER
+        # SAFE SCANNER
         # -----------------------------
         try:
             scan = scan_website(url)
@@ -82,11 +83,11 @@ def index():
         issues_raw = risk.get("issues", [])
         score = risk.get("score", 0)
 
+        issues_with_ai = []
+
         # -----------------------------
         # BUILD ISSUES
         # -----------------------------
-        issues_with_ai = []
-
         for issue in issues_raw:
             name = issue.get("name", "Unknown Issue")
             cvss, severity = get_cvss(name)
@@ -101,16 +102,15 @@ def index():
             })
 
         issue_count = len(issues_with_ai)
-
-        # -----------------------------
-        # CONSISTENCY FIX
+                # -----------------------------
+        # FIX: CONSISTENCY RULE
         # -----------------------------
         if score < 85 and issue_count == 0:
             issues_with_ai.append({
                 "name": "Security Risk Detected (Automated)",
-                "description": "No explicit vulnerabilities found but security score indicates weakness.",
-                "impact": "Possible misconfiguration or hidden vulnerabilities.",
-                "fix": "Run full security audit and enable OWASP recommended headers.",
+                "description": "No explicit vulnerabilities found but score indicates weakness.",
+                "impact": "Misconfiguration or hidden risk possible.",
+                "fix": "Run full OWASP security audit.",
                 "cvss_score": 5.0,
                 "severity": "MEDIUM"
             })
@@ -122,12 +122,12 @@ def index():
         if score == 0 and issue_count == 0:
             risk_level = "UNKNOWN"
             verdict = "NO DATA"
-            summary = "Security scan failed or returned no measurable data."
+            summary = "Scan failed or returned no valid security data."
 
         elif score >= 85:
             risk_level = "LOW"
             verdict = "SAFE"
-            summary = "No significant security weaknesses detected."
+            summary = "System shows strong security posture."
 
         elif score >= 75:
             risk_level = "LOW"
@@ -137,17 +137,17 @@ def index():
         elif score >= 60:
             risk_level = "MEDIUM"
             verdict = "MODERATE RISK"
-            summary = "Security weaknesses detected. Hardening recommended."
+            summary = "Security weaknesses detected."
 
         elif score >= 40:
             risk_level = "HIGH"
             verdict = "HIGH RISK"
-            summary = "Significant vulnerabilities detected. Immediate action required."
+            summary = "Significant vulnerabilities detected."
 
         else:
             risk_level = "CRITICAL"
             verdict = "CRITICAL RISK"
-            summary = "Severe vulnerabilities detected. System is unsafe for production use."
+            summary = "System is highly vulnerable."
 
         # -----------------------------
         # FINAL RESULT

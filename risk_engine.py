@@ -1,66 +1,56 @@
 def analyze_security(headers, url, ssl_status):
 
     issues = []
-    score = 0
-
-    headers = {k.lower(): v for k, v in headers.items()} if isinstance(headers, dict) else {}
+    score = 100  # start from safe baseline
 
     # =========================
-    # SECURITY HEADER CHECKS
+    # SECURITY HEADERS (REAL IMPACT MODEL)
     # =========================
 
-    if "content-security-policy" not in headers:
+    if not headers.get("content-security-policy"):
         issues.append("Missing Content-Security-Policy")
-        score += 30
+        score -= 20
 
-    if "strict-transport-security" not in headers:
+    if not headers.get("strict-transport-security"):
         issues.append("Missing HSTS")
-        score += 25
+        score -= 15
 
-    if "x-content-type-options" not in headers:
+    if not headers.get("x-content-type-options"):
         issues.append("Missing X-Content-Type-Options")
-        score += 10
+        score -= 10
 
-    if "referrer-policy" not in headers:
+    if not headers.get("referrer-policy"):
         issues.append("Missing Referrer-Policy")
-        score += 10
+        score -= 10
 
-    if "permissions-policy" not in headers:
+    if not headers.get("permissions-policy"):
         issues.append("Missing Permissions-Policy")
-        score += 15
+        score -= 10
 
     # =========================
     # SSL CHECK
     # =========================
 
     if not ssl_status or ssl_status.lower() != "valid":
-        issues.append("SSL Certificate Issue")
-        score += 20
+        issues.append("Invalid or Missing SSL Certificate")
+        score -= 25
 
     # =========================
-    # FINAL SCORE LIMIT
+    # SAFETY CLAMP
     # =========================
 
-    if score > 100:
-        score = 100
+    score = max(0, min(score, 100))
 
     # =========================
-    # RISK LEVEL LOGIC (FIXED)
+    # FINAL RISK LEVEL (REAL MODEL)
     # =========================
 
-    if score <= 40:
+    if score >= 80:
         level = "LOW"
-    elif score <= 70:
+    elif score >= 50:
         level = "MEDIUM"
     else:
         level = "HIGH"
-
-    # =========================
-    # OPTIONAL SMART ADDITION
-    # =========================
-
-    if score == 0:
-        issues.append("No security issues detected")
 
     return {
         "score": score,

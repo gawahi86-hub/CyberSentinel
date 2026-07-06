@@ -13,7 +13,7 @@ def analyze_security(headers, url, ssl_status):
 
     score = 100
 
-    # SSL check
+    # ---------------- SSL CHECK ----------------
     if not ssl_status:
         add_vuln(
             "Missing HTTPS (SSL/TLS)",
@@ -23,11 +23,11 @@ def analyze_security(headers, url, ssl_status):
             30
         )
 
-    # Headers
+    # ---------------- SECURITY HEADERS ----------------
     security_headers = {
         "Content-Security-Policy": (
-            "Missing CSP",
-            "XSS risk",
+            "Missing CSP header",
+            "XSS attack risk",
             "Add CSP header",
             15
         ),
@@ -38,8 +38,8 @@ def analyze_security(headers, url, ssl_status):
             10
         ),
         "Strict-Transport-Security": (
-            "Missing HSTS",
-            "Downgrade attacks possible",
+            "Missing HSTS header",
+            "Downgrade attack risk",
             "Enable HSTS",
             15
         )
@@ -49,17 +49,29 @@ def analyze_security(headers, url, ssl_status):
         if h not in headers:
             add_vuln(*data)
 
-    # FINAL SCORE = ONLY FROM VULNERABILITIES
-    score = 100 - sum(v["severity_penalty"] for v in vulnerabilities)
-    score = max(0, min(score, 100))
+    # ---------------- SCORE CALCULATION ----------------
+    if len(vulnerabilities) == 0:
+        score = 100
+    else:
+        total_penalty = sum(v["severity_penalty"] for v in vulnerabilities)
+        score = 100 - total_penalty
+        score = max(0, min(score, 100))
 
-    # LEVEL
+    # ---------------- LEVEL (SAFE LOGIC) ----------------
     if score >= 85:
         level = "LOW"
     elif score >= 60:
         level = "MEDIUM"
-    else:
+    elif score > 0:
         level = "HIGH"
+    else:
+        level = "CRITICAL"
+
+    # ---------------- SAFETY FIX ----------------
+    # If no vulnerabilities but low score → fix inconsistency
+    if len(vulnerabilities) == 0 and score < 100:
+        level = "LOW"
+        score = 100
 
     return {
         "score": score,

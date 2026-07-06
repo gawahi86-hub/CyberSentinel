@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, send_file
 from urllib.parse import urlparse
 import os
+import traceback
 
 from scanner import scan_website
 from risk_engine import analyze_security
@@ -8,10 +9,9 @@ from report import generate_pdf
 
 app = Flask(__name__)
 
-# -----------------------------
-# FIX: Ensure reports folder exists (CRITICAL FOR RENDER)
-# -----------------------------
+# Ensure reports folder exists (Render safe)
 os.makedirs("reports", exist_ok=True)
+
 
 # -----------------------------
 # CVSS ENGINE
@@ -54,24 +54,24 @@ def index():
         domain = urlparse(url).netloc
 
         # -----------------------------
-        # SAFE SCANNER (CRASH PROTECTION)
+        # SCANNER (SAFE MODE)
         # -----------------------------
         try:
             scan = scan_website(url)
-        except Exception as e:
+        except Exception:
             return render_template("index.html", result={
                 "url": url,
-                "domain": "Error",
-                "ip": "Scan Failed",
+                "domain": "Scan Failed",
+                "ip": "Unknown",
                 "http_status": "Error",
                 "headers": {},
                 "ssl": False,
                 "ports": [],
                 "risk_score": 0,
-                "risk_level": "ERROR",
+                "risk_level": "SCAN FAILED",
                 "issues": [],
-                "final_summary": f"Scanner error: {str(e)}",
-                "safety_verdict": "ERROR"
+                "final_summary": "Unable to complete scan due to system error.",
+                "safety_verdict": "SCAN FAILED"
             })
 
         ip = scan.get("ip", "Unknown")
@@ -81,19 +81,34 @@ def index():
         http_status = scan.get("http_status", 0)
 
         # -----------------------------
-        # RISK ENGINE (SAFE)
+        # RISK ENGINE (SAFE MODE)
         # -----------------------------
         try:
             risk = analyze_security(headers, url, ssl_status)
-        except Exception as e:
-            risk = {"issues": [], "score": 0, "level": "ERROR"}
+        except Exception:
+            risk = {
+                "issues": [],
+                "score": 50,
+                "level": "UNKNOWN"
+            }
 
         issues_raw = risk.get("issues", [])
-        score = risk.get("score", 0)
+        score = risk.get("score", 50)
         level = risk.get("level", "UNKNOWN")
 
         # -----------------------------
-        # BUILD VULNERABILITY REPORT (SAFE LOOP)
+        # NORMALIZE LEVEL (FIX)
+        # -----------------------------
+        if level != "SCAN FAILED":
+            if score >= 85:
+                level = "LOW"
+            elif score >= 60:
+                level = "MEDIUM"
+            else:
+                level = "HIGH"
+
+        # -----------------------------
+        # BUILD ISSUES (SAFE LOOP)
         # -----------------------------
         issues_with_ai = []
 
@@ -112,9 +127,15 @@ def index():
             })
 
         # -----------------------------
-        # FINAL VERDICT SYSTEM
+        # FINAL VERDICT SYSTEM (FIXED)
         # -----------------------------
-        if score >= 85:
+        if score is None or score < 0:
+            score = 50
+
+        if level == "SCAN FAILED":
+            verdict = "SCAN FAILED"
+            summary = "Unable to complete full security scan. Partial or no results available."
+        elif score >= 85:
             verdict = "SAFE"
             summary = "Strong security posture with minimal risk."
         elif score >= 60:
@@ -143,12 +164,12 @@ def index():
         }
 
         # -----------------------------
-        # PDF GENERATION (SAFE)
+        # PDF GENERATION
         # -----------------------------
         try:
             generate_pdf(result)
-        except Exception as e:
-            print("PDF Error:", e)
+        except Exception:
+            print(traceback.format_exc())
 
     return render_template("index.html", result=result)
 

@@ -1,203 +1,71 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CyberSentinel</title>
 
 <style>
-body{
-    margin:0;
-    font-family: Arial;
-    background:#0b0f1a;
-    color:#e6e6e6;
-}
-
-.container{
-    width:90%;
-    max-width:1100px;
-    margin:30px auto;
-}
-
-.card{
-    background:#121a2a;
-    padding:20px;
-    border-radius:10px;
-    margin-bottom:20px;
-}
-
-h1,h2{
-    color:#00d4ff;
-}
-
-input{
-    width:70%;
-    padding:12px;
-    border-radius:5px;
-    border:none;
-}
-
-button{
-    padding:12px 18px;
-    background:#00d4ff;
-    border:none;
-    font-weight:bold;
-    cursor:pointer;
-    border-radius:5px;
-}
-
-table{
-    width:100%;
-    border-collapse:collapse;
-}
-
-th{
-    background:#00d4ff;
-    color:black;
-    padding:10px;
-}
-
-td{
-    padding:10px;
-    border-bottom:1px solid #2a2f3a;
-}
-
-.btn{
-    display:inline-block;
-    margin-top:10px;
-    padding:10px 15px;
-    background:green;
-    color:white;
-    text-decoration:none;
-    border-radius:5px;
-}
-
-.issue-card{
-    background:#0f172a;
-    padding:15px;
-    border-left:4px solid #00d4ff;
-    margin-bottom:12px;
-    border-radius:5px;
-}
-
+body {font-family: Arial; background:#0b0f1a; color:white;}
+.container {width:90%; margin:auto;}
+.card {background:#121a2a; padding:20px; margin:15px 0; border-radius:10px;}
+input {width:70%; padding:10px;}
+button {padding:10px; background:#00d4ff; border:none; cursor:pointer;}
+.red {color:red;}
+.green {color:lime;}
+.orange {color:orange;}
 </style>
+
 </head>
 
 <body>
 
 <div class="container">
 
-<h1>🛡 CyberSentinel Security Scanner</h1>
+<h1>🛡 CyberSentinel Dashboard</h1>
 
-<div class="card">
 <form method="POST">
-<input type="text" name="url" placeholder="Enter website">
-<button>Scan Website</button>
+<input name="url" placeholder="Enter website">
+<button>Scan</button>
 </form>
-</div>
 
 {% if result %}
 
-<!-- SUMMARY -->
 <div class="card">
 <h2>📊 Security Summary</h2>
-
-<p><b>Target:</b> {{ result.url }}</p>
-<p><b>Domain:</b> {{ result.domain }}</p>
-<p><b>IP:</b> {{ result.ip }}</p>
-<p><b>HTTP Status:</b> {{ result.http_status }}</p>
-<p><b>Risk Score:</b> {{ result.risk_score }}/100</p>
-<p><b>Risk Level:</b> {{ result.risk_level }}</p>
+<p>URL: {{ result.url }}</p>
+<p>Domain: {{ result.domain }}</p>
+<p>IP: {{ result.ip }}</p>
+<p>Risk Score: {{ result.risk_score }}/100</p>
+<p>Risk Level: {{ result.risk_level }}</p>
 </div>
 
-<!-- VULNERABILITIES -->
 <div class="card">
-<h2>⚠️ Vulnerability Analysis (AI Engine)</h2>
+<h2>🚨 Security Verdict</h2>
 
-{% for i in result.issues %}
-
-<div class="issue-card">
-
-<h3>{{ i.name }}</h3>
-
-<p><b>Meaning:</b> {{ i.explanation.meaning }}</p>
-<p><b>Risk:</b> {{ i.explanation.risk }}</p>
-<p><b>Fix:</b> {{ i.explanation.fix }}</p>
-
-</div>
-
-{% endfor %}
-
-</div>
-
-<!-- FINAL SUMMARY -->
-<div class="card">
-<h2>📌 Final Security Summary</h2>
+{% if result.safety_verdict == "SAFE" %}
+<p class="green">🟢 SAFE TO USE</p>
+{% elif result.safety_verdict == "CAUTION" %}
+<p class="orange">🟠 USE WITH CAUTION</p>
+{% else %}
+<p class="red">🔴 NOT SAFE</p>
+{% endif %}
 
 <p>{{ result.final_summary }}</p>
-
-<p>
-<b>AI Insight:</b>
-This report is generated using automated scanning of security headers, SSL validation, and network exposure analysis.
-</p>
 </div>
 
-<!-- PORTS -->
 <div class="card">
-<h2>🔍 Port Scan Results</h2>
+<h2>⚠ Vulnerabilities</h2>
 
-<table>
-<tr>
-<th>Port</th>
-<th>Service</th>
-<th>Status</th>
-</tr>
-
-{% for p in result.ports %}
-<tr>
-<td>{{ p.port }}</td>
-<td>{{ p.service }}</td>
-<td>{{ p.status }}</td>
-</tr>
+{% for i in result.issues %}
+<p><b>{{ i.name }}</b> - {{ i.explanation.meaning }}</p>
 {% endfor %}
 
-</table>
 </div>
 
-<!-- PDF -->
 <div class="card">
-<h2>📄 Report</h2>
-<a class="btn" href="/download-report">📥 Download PDF Report</a>
+<a href="/download-report">📥 Download PDF Report</a>
 </div>
 
 {% endif %}
-
-<!-- HISTORY -->
-<div class="card">
-<h2>📁 Scan History</h2>
-
-<table>
-<tr>
-<th>ID</th>
-<th>URL</th>
-<th>Domain</th>
-<th>Score</th>
-<th>Level</th>
-</tr>
-
-{% for row in history %}
-<tr>
-<td>{{ row[0] }}</td>
-<td>{{ row[1] }}</td>
-<td>{{ row[2] }}</td>
-<td>{{ row[3] }}</td>
-<td>{{ row[4] }}</td>
-</tr>
-{% endfor %}
-
-</table>
-
-</div>
 
 </div>
 

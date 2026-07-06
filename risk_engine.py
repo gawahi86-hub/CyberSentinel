@@ -66,6 +66,30 @@ def analyze_security(headers, url, ssl_status):
     else:
         level = "HIGH"
 
+    # ---------------- CONSISTENCY FIX (IMPORTANT) ----------------
+    # Ensure vulnerabilities ALWAYS match risk output
+    if score < 85 and len(vulnerabilities) == 0:
+
+        if score < 60:
+            vulnerabilities.append({
+                "name": "Critical Security Posture Weakness",
+                "description": "System shows high risk based on security scoring model, but no direct header-based vulnerabilities were detected.",
+                "impact": "Possible hidden misconfigurations, outdated server configuration, or untested attack surface.",
+                "fix": "Perform full penetration testing and enable OWASP recommended security headers.",
+                "severity_penalty": 20
+            })
+        else:
+            vulnerabilities.append({
+                "name": "Minor Security Hardening Required",
+                "description": "No direct vulnerabilities detected, but security posture is not fully hardened.",
+                "impact": "System may be exposed to low-risk or unknown vulnerabilities.",
+                "fix": "Enable missing security headers and enforce HTTPS across all endpoints.",
+                "severity_penalty": 10
+            })
+
+        # Adjust score to reflect added finding
+        score = max(0, score - vulnerabilities[-1]["severity_penalty"])
+
     return {
         "score": score,
         "level": level,

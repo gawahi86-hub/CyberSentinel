@@ -9,10 +9,15 @@ from report import generate_pdf
 app = Flask(__name__)
 
 # -----------------------------
+# FIX: Ensure reports folder exists (CRITICAL FOR RENDER)
+# -----------------------------
+os.makedirs("reports", exist_ok=True)
+
+# -----------------------------
 # CVSS ENGINE
 # -----------------------------
 def get_cvss(issue_name):
-    name = issue_name.lower()
+    name = str(issue_name).lower()
 
     if "ssl" in name or "https" in name:
         return 9.0, "CRITICAL"
@@ -49,9 +54,25 @@ def index():
         domain = urlparse(url).netloc
 
         # -----------------------------
-        # SCANNER (SAFE)
+        # SAFE SCANNER (CRASH PROTECTION)
         # -----------------------------
-        scan = scan_website(url)
+        try:
+            scan = scan_website(url)
+        except Exception as e:
+            return render_template("index.html", result={
+                "url": url,
+                "domain": "Error",
+                "ip": "Scan Failed",
+                "http_status": "Error",
+                "headers": {},
+                "ssl": False,
+                "ports": [],
+                "risk_score": 0,
+                "risk_level": "ERROR",
+                "issues": [],
+                "final_summary": f"Scanner error: {str(e)}",
+                "safety_verdict": "ERROR"
+            })
 
         ip = scan.get("ip", "Unknown")
         headers = scan.get("headers", {})
@@ -60,27 +81,32 @@ def index():
         http_status = scan.get("http_status", 0)
 
         # -----------------------------
-        # RISK ENGINE
+        # RISK ENGINE (SAFE)
         # -----------------------------
-        risk = analyze_security(headers, url, ssl_status)
+        try:
+            risk = analyze_security(headers, url, ssl_status)
+        except Exception as e:
+            risk = {"issues": [], "score": 0, "level": "ERROR"}
 
         issues_raw = risk.get("issues", [])
         score = risk.get("score", 0)
         level = risk.get("level", "UNKNOWN")
 
         # -----------------------------
-        # BUILD VULNERABILITY REPORT
+        # BUILD VULNERABILITY REPORT (SAFE LOOP)
         # -----------------------------
         issues_with_ai = []
 
         for issue in issues_raw:
-            cvss, severity = get_cvss(issue["name"])
+            name = issue.get("name", "Unknown Issue")
+
+            cvss, severity = get_cvss(name)
 
             issues_with_ai.append({
-                "name": issue["name"],
-                "description": issue.get("description", ""),
-                "impact": issue.get("impact", ""),
-                "fix": issue.get("fix", ""),
+                "name": name,
+                "description": issue.get("description", "No description available"),
+                "impact": issue.get("impact", "Unknown impact"),
+                "fix": issue.get("fix", "No fix provided"),
                 "cvss_score": cvss,
                 "severity": severity
             })

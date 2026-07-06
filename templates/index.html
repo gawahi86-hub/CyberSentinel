@@ -1,192 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>CyberSentinel SOC Dashboard</title>
+<meta charset="UTF-8">
+<title>CyberSentinel SOC Dashboard</title>
 
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #0b0f19;
-            color: white;
-        }
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0b0f19;
+    color: white;
+}
 
-        .header {
-            background: #111827;
-            padding: 20px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            border-bottom: 2px solid #1f2937;
-        }
+/* HEADER */
+.header {
+    background: #111827;
+    padding: 20px;
+    text-align: center;
+    font-size: 26px;
+    font-weight: bold;
+    border-bottom: 2px solid #1f2937;
+}
 
-        .container {
-            width: 85%;
-            margin: auto;
-            padding: 20px;
-        }
+/* CONTAINER */
+.container {
+    width: 85%;
+    margin: auto;
+    padding: 20px;
+}
 
-        .scan-box {
-            background: #111827;
-            padding: 20px;
-            border-radius: 10px;
-        }
+/* SCAN BOX */
+.scan-box {
+    background: #111827;
+    padding: 20px;
+    border-radius: 10px;
+}
 
-        input {
-            width: 70%;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-        }
+/* INPUT */
+input {
+    width: 70%;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+}
 
-        button {
-            padding: 10px 20px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
+/* BUTTON */
+button {
+    padding: 12px 20px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
 
-        .cards {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-        }
+button:hover {
+    background: #1d4ed8;
+}
 
-        .card {
-            flex: 1;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: bold;
-        }
+/* CARDS */
+.cards {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
 
-        .safe { background: #16a34a; }
-        .medium { background: #f59e0b; }
-        .high { background: #dc2626; }
+.card {
+    flex: 1;
+    padding: 18px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+}
 
-        .section {
-            background: #111827;
-            margin-top: 20px;
-            padding: 20px;
-            border-radius: 10px;
-        }
+.safe { background: #16a34a; }
+.medium { background: #f59e0b; }
+.high { background: #dc2626; }
 
-        ul {
-            list-style: none;
-            padding: 0;
-        }
+/* SECTIONS */
+.section {
+    background: #111827;
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 10px;
+}
 
-        li {
-            background: #1f2937;
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 8px;
-        }
+/* LIST */
+ul {
+    list-style: none;
+    padding: 0;
+}
 
-        .badge {
-            padding: 3px 8px;
-            border-radius: 5px;
-            font-size: 12px;
-        }
+li {
+    background: #1f2937;
+    margin: 10px 0;
+    padding: 15px;
+    border-radius: 8px;
+}
 
-        .low { background: #16a34a; }
-        .med { background: #f59e0b; }
-        .highb { background: #dc2626; }
+/* BADGES */
+.badge {
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+}
 
-        .small {
-            font-size: 13px;
-            color: #cbd5e1;
-        }
-    </style>
+.low { background: #16a34a; }
+.med { background: #f59e0b; }
+.highb { background: #dc2626; }
+
+/* SMALL TEXT */
+.small {
+    font-size: 13px;
+    color: #cbd5e1;
+}
+
+/* ERROR BOX */
+.error {
+    background: #7f1d1d;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+/* EMPTY STATE */
+.empty {
+    text-align: center;
+    color: #9ca3af;
+    padding: 20px;
+}
+</style>
 </head>
 
 <body>
 
 <div class="header">
-    🛡️ CyberSentinel SOC Security Dashboard
+🛡️ CyberSentinel SOC Security Dashboard
 </div>
 
 <div class="container">
 
-    <!-- SCAN INPUT -->
-    <div class="scan-box">
-        <form method="POST">
-            <input type="text" name="url" placeholder="Enter website URL">
-            <button type="submit">Run Scan</button>
-        </form>
+<!-- INPUT -->
+<div class="scan-box">
+<form method="POST">
+    <input type="text" name="url" placeholder="Enter website URL">
+    <button type="submit">Run Scan</button>
+</form>
+</div>
+
+<!-- ERROR HANDLING -->
+{% if result and result.domain == "Error" %}
+<div class="error">
+⚠️ Scan Failed: {{ result.final_summary }}
+</div>
+{% endif %}
+
+{% if result %}
+
+<!-- RISK CARDS -->
+<div class="cards">
+
+    <div class="card safe">
+        Risk Score<br>
+        {{ result.risk_score }}
     </div>
 
-    {% if result %}
+    <div class="card medium">
+        Risk Level<br>
+        {{ result.risk_level }}
+    </div>
 
-    <!-- RISK CARDS -->
-    <div class="cards">
-        <div class="card safe">
-            Risk Score<br>
-            {{ result.risk_score }}
+    <div class="card {% if result.safety_verdict == 'SAFE' %}safe{% elif result.safety_verdict == 'MODERATE' %}medium{% else %}high{% endif %}">
+        Verdict<br>
+        {{ result.safety_verdict }}
+    </div>
+
+</div>
+
+<!-- SUMMARY -->
+<div class="section">
+<h3>Executive Summary</h3>
+<p>{{ result.final_summary }}</p>
+</div>
+
+<!-- TARGET INFO -->
+<div class="section">
+<h3>Target Information</h3>
+<p><b>URL:</b> {{ result.url }}</p>
+<p><b>IP:</b> {{ result.ip }}</p>
+<p><b>HTTP Status:</b> {{ result.http_status }}</p>
+</div>
+
+<!-- VULNERABILITIES -->
+<div class="section">
+<h3>Security Vulnerabilities</h3>
+
+{% if result.issues|length == 0 %}
+<div class="empty">
+No vulnerabilities detected. System is secure.
+</div>
+{% else %}
+<ul>
+{% for issue in result.issues %}
+    <li>
+        <b>{{ issue.name }}</b><br>
+
+        <div class="small">
+            📖 {{ issue.description }}<br>
+            ⚠️ {{ issue.impact }}<br>
+            🛠 {{ issue.fix }}
         </div>
 
-        <div class="card medium">
-            Risk Level<br>
-            {{ result.risk_level }}
-        </div>
+        <br>
 
-        <div class="card {% if result.safety_verdict == 'SAFE' %}safe{% elif result.safety_verdict == 'MODERATE' %}medium{% else %}high{% endif %}">
-            Verdict<br>
-            {{ result.safety_verdict }}
-        </div>
-    </div>
+        CVSS: {{ issue.cvss_score }} |
+        <span class="badge {% if issue.severity == 'LOW' %}low{% elif issue.severity == 'MEDIUM' %}med{% else %}highb{% endif %}">
+            {{ issue.severity }}
+        </span>
+    </li>
+{% endfor %}
+</ul>
+{% endif %}
 
-    <!-- SUMMARY -->
-    <div class="section">
-        <h3>Executive Summary</h3>
-        <p>{{ result.final_summary }}</p>
-    </div>
+</div>
 
-    <!-- TARGET INFO -->
-    <div class="section">
-        <h3>Target Information</h3>
-        <p><b>URL:</b> {{ result.url }}</p>
-        <p><b>IP:</b> {{ result.ip }}</p>
-        <p><b>HTTP Status:</b> {{ result.http_status }}</p>
-    </div>
+<!-- PDF -->
+<div class="section">
+<a href="/download-report" style="color:#60a5fa;">
+📄 Download Professional SOC Report (PDF)
+</a>
+</div>
 
-    <!-- VULNERABILITIES -->
-    <div class="section">
-        <h3>Security Vulnerabilities</h3>
-
-        <ul>
-        {% for issue in result.issues %}
-            <li>
-                <b>{{ issue.name }}</b><br>
-
-                <div class="small">
-                    📖 {{ issue.description }}<br>
-                    ⚠️ {{ issue.impact }}<br>
-                    🛠 {{ issue.fix }}
-                </div>
-
-                <br>
-
-                CVSS: {{ issue.cvss_score }} |
-                <span class="badge {% if issue.severity == 'LOW' %}low{% elif issue.severity == 'MEDIUM' %}med{% else %}highb{% endif %}">
-                    {{ issue.severity }}
-                </span>
-            </li>
-        {% endfor %}
-        </ul>
-    </div>
-
-    <!-- PDF -->
-    <div class="section">
-        <a href="/download-report" style="color:#60a5fa;">
-            📄 Download Professional PDF Report
-        </a>
-    </div>
-
-    {% endif %}
+{% endif %}
 
 </div>
 

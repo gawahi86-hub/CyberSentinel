@@ -1,14 +1,10 @@
 def analyze_security(headers, url, ssl_status):
-
     score = 100
     issues = []
+    reasons = []
+    recommendations = []
 
-    # SSL check
-    if ssl_status != "valid":
-        score -= 25
-        issues.append("SSL certificate issue detected")
-
-    # Security headers check
+    # SECURITY HEADERS CHECK
     required_headers = [
         "Content-Security-Policy",
         "Strict-Transport-Security",
@@ -19,10 +15,19 @@ def analyze_security(headers, url, ssl_status):
 
     for h in required_headers:
         if h not in headers:
-            score -= 10
+            score -= 15
             issues.append(f"Missing {h}")
+            reasons.append(f"{h} missing → OWASP A05: Security Misconfiguration")
+            recommendations.append(f"Enable {h} header")
 
-    # final logic
+    # SSL CHECK
+    if ssl_status != "valid":
+        score -= 20
+        issues.append("SSL Certificate issue")
+        reasons.append("Invalid SSL → Data interception risk")
+        recommendations.append("Fix SSL certificate")
+
+    # FINAL RISK LEVEL
     if score >= 80:
         level = "LOW"
     elif score >= 50:
@@ -33,5 +38,7 @@ def analyze_security(headers, url, ssl_status):
     return {
         "score": max(score, 0),
         "level": level,
-        "issues": issues
+        "issues": issues,
+        "reasons": reasons,
+        "recommendations": recommendations
     }

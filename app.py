@@ -39,16 +39,13 @@ def index():
 
             ip = get_ip(domain)
 
-            # ✅ SAFE WHOIS
             try:
                 whois_info = str(whois.whois(domain))
             except:
                 whois_info = "Unavailable"
 
-            # ✅ SAFE DNS (NO FREEZE ON RENDER)
             try:
-                answers = dns.resolver.resolve(domain, "A", lifetime=2)
-                dns_records = [str(x) for x in answers]
+                dns_records = [str(x) for x in dns.resolver.resolve(domain, "A")]
             except:
                 dns_records = []
 
@@ -57,7 +54,11 @@ def index():
             ports = run_port_scan(domain)
             http_status = get_http_status(domain)
 
-            risk = analyze_security(headers, url, ssl_info.get("status", "Unavailable"))
+            risk = analyze_security(
+                headers,
+                url,
+                ssl_info.get("status", "Unavailable")
+            )
 
             result = {
                 "url": url,
@@ -71,7 +72,11 @@ def index():
                 "ports": ports,
                 "risk_score": risk["score"],
                 "risk_level": risk["level"],
-                "issues": risk["issues"],
+
+                # NEW UPGRADE FIELDS
+                "issues": risk.get("issues", []),
+                "reasons": risk.get("reasons", []),
+                "recommendations": risk.get("recommendations", [])
             }
 
             save_scan(url, domain, risk["score"], risk["level"])
@@ -84,7 +89,6 @@ def index():
     )
 
 
-# 🚀 FIXED DOWNLOAD ROUTE (STABLE + SAFE FILE NAME)
 @app.route("/download-report")
 def download_report():
     history = get_scans()
@@ -94,17 +98,12 @@ def download_report():
 
     latest = history[0]
 
-    url = latest[1]
-    domain = latest[2]
-    score = latest[3]
-    level = latest[4]
-
     result = {
-        "url": url,
-        "domain": domain,
+        "url": latest[1],
+        "domain": latest[2],
         "ip": "",
-        "risk_score": score,
-        "risk_level": level,
+        "risk_score": latest[3],
+        "risk_level": latest[4],
         "issues": []
     }
 
@@ -113,15 +112,7 @@ def download_report():
     if not pdf_path:
         return "PDF generation failed", 500
 
-    # ✅ CLEAN FILE NAME
-    safe_domain = domain.replace(".", "_")
-    filename = f"CyberSentinel_{safe_domain}_Report.pdf"
-
-    return send_file(
-        pdf_path,
-        as_attachment=True,
-        download_name=filename
-    )
+    return send_file(pdf_path, as_attachment=True)
 
 
 if __name__ == "__main__":

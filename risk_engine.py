@@ -11,67 +11,78 @@ def analyze_security(headers, url, ssl_status):
             "severity_penalty": penalty
         })
 
+    # Start with perfect score
     score = 100
 
     # ---------------- SSL CHECK ----------------
     if not ssl_status:
         add_vuln(
             "Missing HTTPS (SSL/TLS)",
-            "No encrypted connection.",
-            "Data interception risk.",
-            "Enable HTTPS with SSL certificate.",
+            "Website is not using an encrypted HTTPS connection.",
+            "Data transmitted between users and the website may be intercepted.",
+            "Install a valid SSL/TLS certificate and redirect all traffic to HTTPS.",
             30
         )
 
     # ---------------- SECURITY HEADERS ----------------
     security_headers = {
         "Content-Security-Policy": (
-            "Missing CSP header",
-            "XSS attack risk",
-            "Add CSP header",
+            "Missing Content-Security-Policy",
+            "Cross-Site Scripting (XSS) attacks may be easier.",
+            "Implement a strong Content-Security-Policy header.",
             15
         ),
         "X-Frame-Options": (
             "Missing X-Frame-Options",
-            "Clickjacking risk",
-            "Set DENY or SAMEORIGIN",
+            "Website may be vulnerable to clickjacking.",
+            "Set X-Frame-Options to DENY or SAMEORIGIN.",
             10
         ),
         "Strict-Transport-Security": (
-            "Missing HSTS header",
-            "Downgrade attack risk",
-            "Enable HSTS",
+            "Missing HSTS Header",
+            "Users could be vulnerable to protocol downgrade attacks.",
+            "Enable Strict-Transport-Security with an appropriate max-age.",
             15
+        ),
+        "X-Content-Type-Options": (
+            "Missing X-Content-Type-Options",
+            "Browser MIME sniffing attacks may be possible.",
+            "Set X-Content-Type-Options to nosniff.",
+            10
         )
     }
 
-    for h, data in security_headers.items():
-        if h not in headers:
-            add_vuln(*data)
+    for header, values in security_headers.items():
 
-    # ---------------- SCORE CALCULATION ----------------
-    if len(vulnerabilities) == 0:
-        score = 100
-    else:
-        total_penalty = sum(v["severity_penalty"] for v in vulnerabilities)
-        score = 100 - total_penalty
-        score = max(0, min(score, 100))
+        if header not in headers:
 
-    # ---------------- LEVEL (SAFE LOGIC) ----------------
+            add_vuln(
+                values[0],
+                values[1],
+                values[1],
+                values[2],
+                values[3]
+            )
+
+    # ---------------- SCORE ----------------
+
+    total_penalty = sum(v["severity_penalty"] for v in vulnerabilities)
+
+    score = max(0, 100 - total_penalty)
+
+    # ---------------- RISK LEVEL ----------------
+
     if score >= 85:
-        level = "HIGH"
+        level = "LOW"
+
     elif score >= 60:
         level = "MEDIUM"
-    elif score > 0:
-        level = "LOW"
-    else:
-        level = "ZERO"
 
-    # ---------------- SAFETY FIX ----------------
-    # If no vulnerabilities but low score → fix inconsistency
-    if len(vulnerabilities) == 0 and score < 100:
-        level = "LOW"
-        score = 100
+    elif score >= 40:
+        level = "HIGH"
+
+    else:
+        level = "CRITICAL"
 
     return {
         "score": score,

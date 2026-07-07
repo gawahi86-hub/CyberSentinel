@@ -9,31 +9,39 @@ from report import generate_pdf
 
 app = Flask(__name__)
 
+# -----------------------------
 # Ensure reports folder exists
+# -----------------------------
 os.makedirs("reports", exist_ok=True)
+
 
 # -----------------------------
 # CVSS ENGINE
 # -----------------------------
 def get_cvss(issue_name):
+
     name = str(issue_name).lower()
 
     if "ssl" in name or "https" in name:
         return 9.0, "CRITICAL"
-    elif "csp" in name:
+
+    elif "content-security-policy" in name or "csp" in name:
         return 7.5, "HIGH"
-    elif "clickjacking" in name or "frame" in name:
+
+    elif "frame" in name or "clickjacking" in name:
         return 6.5, "MEDIUM"
-    elif "mime" in name:
-        return 6.0, "MEDIUM"
+
     elif "hsts" in name:
         return 6.5, "MEDIUM"
-    else:
-        return 5.0, "LOW"
+
+    elif "content-type" in name or "mime" in name:
+        return 6.0, "MEDIUM"
+
+    return 5.0, "LOW"
 
 
 # -----------------------------
-# HOME ROUTE
+# HOME PAGE
 # -----------------------------
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -44,7 +52,7 @@ def index():
 
         url = request.form.get("url", "").strip()
 
-        if not url:
+        if url == "":
             return render_template("index.html", result=None)
 
         if not url.startswith("http"):
@@ -53,17 +61,21 @@ def index():
         domain = urlparse(url).netloc
 
         # -----------------------------
-        # SAFE SCANNER
+        # WEBSITE SCAN
         # -----------------------------
         try:
             scan = scan_website(url)
+
         except Exception:
+
+            print(traceback.format_exc())
+
             scan = {
                 "ip": "Unknown",
                 "headers": {},
                 "ssl": False,
                 "ports": [],
-                "http_status": "Error"
+                "http_status": 0
             }
 
         ip = scan.get("ip", "Unknown")
@@ -73,84 +85,90 @@ def index():
         http_status = scan.get("http_status", 0)
 
         # -----------------------------
-        # RISK ENGINE
+        # SECURITY ANALYSIS
         # -----------------------------
         try:
-            risk = analyze_security(headers, url, ssl_status)
+
+            risk = analyze_security(
+                headers=headers,
+                url=url,
+                ssl_status=ssl_status
+            )
+
         except Exception:
-            risk = {"issues": [], "score": 0, "level": "ERROR"}
 
-        issues_raw = risk.get("issues", [])
+            print(traceback.format_exc())
+
+            risk = {
+                "score": 0,
+                "level": "UNKNOWN",
+                "issues": []
+            }
+
         score = risk.get("score", 0)
+        issues = risk.get("issues", [])
 
-        issues_with_ai = []
+        issues_with_cvss = []
 
-        # -----------------------------
-        # BUILD ISSUES
-        # -----------------------------
-        for issue in issues_raw:
-            name = issue.get("name", "Unknown Issue")
-            cvss, severity = get_cvss(name)
+        for issue in issues:
 
-            issues_with_ai.append({
-                "name": name,
-                "description": issue.get("description", ""),
-                "impact": issue.get("impact", ""),
-                "fix": issue.get("fix", ""),
-                "cvss_score": cvss,
+            cvss_score, severity = get_cvss(issue["name"])
+
+            issues_with_cvss.append({
+                "name": issue["name"],
+                "description": issue["description"],
+                "impact": issue["impact"],
+                "fix": issue["fix"],
+                "cvss_score": cvss_score,
                 "severity": severity
             })
 
-        issue_count = len(issues_with_ai)
+        issue_count = len(issues_with_cvss)
                 # -----------------------------
-        # FIX: CONSISTENCY RULE
+        # FINAL CLASSIFICATION
         # -----------------------------
-        if score > 85 and issue_count == 0:
-            issues_with_ai.append({
-                "name": "Security Risk Detected (Automated)",
-                "description": "No explicit vulnerabilities found but score indicates weakness.",
-                "impact": "Misconfiguration or hidden risk possible.",
-                "fix": "Run full OWASP security audit.",
-                "cvss_score": 5.0,
-                "severity": "MEDIUM"
-            })
-            issue_count = 1
-
-        # -----------------------------
-        # FINAL SOC CLASSIFICATION (FIXED)
-        # -----------------------------
-        if score == 0 and issue_count == 0:
-            risk_level = "UNKNOWN"
-            verdict = "NO DATA"
-            summary = "Scan failed or returned no valid security data."
-
-        elif score <= 85:
+        if score >= 85:
             risk_level = "LOW"
             verdict = "SAFE"
-            summary = "System shows strong security posture."
+            summary = (
+                "The website demonstrates a strong security posture. "
+                "No major security weaknesses were identified during the assessment."
+            )
 
-        elif score <= 75:
+        elif score >= 70:
             risk_level = "LOW"
             verdict = "MOSTLY SAFE"
-            summary = "Minor improvements recommended."
+            summary = (
+                "The website is generally secure. "
+                "Some improvements are recommended to further strengthen security."
+            )
 
-        elif score <= 60:
+        elif score >= 50:
             risk_level = "MEDIUM"
             verdict = "MODERATE RISK"
-            summary = "Security weaknesses detected."
+            summary = (
+                "Several security weaknesses were identified. "
+                "Review and implement the recommended fixes."
+            )
 
-        elif score <= 40:
+        elif score >= 25:
             risk_level = "HIGH"
             verdict = "HIGH RISK"
-            summary = "Significant vulnerabilities detected."
+            summary = (
+                "Multiple vulnerabilities were detected. "
+                "Immediate remediation is recommended."
+            )
 
         else:
             risk_level = "CRITICAL"
             verdict = "CRITICAL RISK"
-            summary = "System is at high risk."
+            summary = (
+                "Critical security weaknesses were detected. "
+                "The website should be reviewed before production use."
+            )
 
         # -----------------------------
-        # FINAL RESULT
+        # BUILD RESULT OBJECT
         # -----------------------------
         result = {
             "url": url,
@@ -162,20 +180,24 @@ def index():
             "ports": ports,
             "risk_score": score,
             "risk_level": risk_level,
-            "issues": issues_with_ai,
+            "safety_verdict": verdict,
             "final_summary": summary,
-            "safety_verdict": verdict
+            "issues": issues_with_cvss
         }
 
         # -----------------------------
-        # PDF GENERATION
+        # GENERATE PDF
         # -----------------------------
         try:
             generate_pdf(result)
+
         except Exception:
             print(traceback.format_exc())
 
-    return render_template("index.html", result=result)
+    return render_template(
+        "index.html",
+        result=result
+    )
 
 
 # -----------------------------
@@ -183,12 +205,27 @@ def index():
 # -----------------------------
 @app.route("/download-report")
 def download_report():
-    return send_file("reports/security_report.pdf", as_attachment=True)
+
+    pdf_path = "reports/security_report.pdf"
+
+    if os.path.exists(pdf_path):
+        return send_file(
+            pdf_path,
+            as_attachment=True
+        )
+
+    return "Report not found.", 404
 
 
 # -----------------------------
-# RUN APP
+# START APPLICATION
 # -----------------------------
 if __name__ == "__main__":
+
     port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False
+    )

@@ -14,9 +14,31 @@ from report import generate_pdf
 app = Flask(__name__)
 
 
+# ---------------------------------
+# REPORT FOLDER
+# ---------------------------------
+
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
+
+
+REPORT_FOLDER = os.path.join(
+    BASE_DIR,
+    "reports"
+)
+
+
 os.makedirs(
-    "reports",
+    REPORT_FOLDER,
     exist_ok=True
+)
+
+
+
+PDF_FILE = os.path.join(
+    REPORT_FOLDER,
+    "security_report.pdf"
 )
 
 
@@ -32,12 +54,12 @@ def calculate_risk_score(findings):
         return 0
 
 
-    total = 0
+    score = 0
 
 
     for item in findings:
 
-        total += float(
+        score += float(
             item.get(
                 "cvss",
                 0
@@ -45,15 +67,10 @@ def calculate_risk_score(findings):
         )
 
 
-    # Limit score to 100
-
-    score = min(
-        round(total,1),
+    return min(
+        round(score, 1),
         100
     )
-
-
-    return score
 
 
 
@@ -119,14 +136,14 @@ def classify_risk(score):
 def index():
 
 
-    result=None
+    result = None
 
 
 
-    if request.method=="POST":
+    if request.method == "POST":
 
 
-        user_url=request.form.get(
+        user_url = request.form.get(
             "url",
             ""
         ).strip()
@@ -145,9 +162,7 @@ def index():
         try:
 
 
-            # Scanner handles normalization
-
-            scan=scan_website(
+            scan = scan_website(
                 user_url
             )
 
@@ -161,70 +176,41 @@ def index():
             )
 
 
-            scan={
+            scan = {
 
-                "url":
-                user_url,
+                "url": user_url,
 
-                "ip":
-                "Unknown",
+                "ip": "Unknown",
 
-                "headers":
-                {},
+                "headers": {},
 
-                "ssl":
-                False,
+                "ssl": False,
 
-                "ports":
-                [],
+                "ports": [],
 
-                "http_status":
-                "Unavailable",
+                "http_status": "Unavailable",
 
-                "response_time":
-                0,
+                "response_time": 0,
 
-                "server":
-                "Unknown",
+                "server": "Unknown",
 
-                "technology":
-                "Unknown",
+                "technology": "Unknown",
 
-                "findings":[{
-
-                    "name":
-                    "Scanner Error",
-
-                    "title":
-                    "Scanner Error",
-
-                    "severity":
-                    "INFO",
-
-                    "cvss":
-                    0,
-
-                    "description":
-                    "Scanner failed.",
-
-                    "recommendation":
-                    "Check URL."
-
-                }]
+                "findings": []
 
             }
 
 
 
 
-        findings=scan.get(
+        findings = scan.get(
             "findings",
             []
         )
 
 
 
-        risk_score=calculate_risk_score(
+        risk_score = calculate_risk_score(
             findings
         )
 
@@ -236,7 +222,7 @@ def index():
 
 
 
-        parsed=urlparse(
+        parsed = urlparse(
             scan.get(
                 "url",
                 user_url
@@ -245,11 +231,8 @@ def index():
 
 
 
-        # ---------------------------------
-        # Prepare Issues For Dashboard/PDF
-        # ---------------------------------
+        issues = []
 
-        issues=[]
 
 
         for finding in findings:
@@ -335,7 +318,8 @@ def index():
 
 
 
-        result={
+
+        result = {
 
 
             "url":
@@ -436,15 +420,29 @@ def index():
 
 
 
+
+        # ---------------------------------
+        # CREATE PDF
+        # ---------------------------------
+
         try:
 
             generate_pdf(
                 result
             )
 
+            print(
+                "PDF created:",
+                PDF_FILE
+            )
+
 
         except Exception:
 
+
+            print(
+                "PDF Generation Failed"
+            )
 
             print(
                 traceback.format_exc()
@@ -465,7 +463,6 @@ def index():
 
 
 
-
 # ---------------------------------
 # DOWNLOAD REPORT
 # ---------------------------------
@@ -477,20 +474,27 @@ def index():
 def download_report():
 
 
-    file="reports/security_report.pdf"
+    if os.path.exists(
+        PDF_FILE
+    ):
 
-
-
-    if os.path.exists(file):
 
         return send_file(
-            file,
-            as_attachment=True
+
+            PDF_FILE,
+
+            as_attachment=True,
+
+            download_name="CyberSentinel_Security_Report.pdf"
+
         )
 
 
 
-    return "Report not found",404
+    return (
+        "Report not found. Please run a scan first.",
+        404
+    )
 
 
 
@@ -502,15 +506,16 @@ def download_report():
 # START SERVER
 # ---------------------------------
 
-if __name__=="__main__":
+if __name__ == "__main__":
 
 
-    port=int(
+    port = int(
         os.environ.get(
             "PORT",
             10000
         )
     )
+
 
 
     app.run(

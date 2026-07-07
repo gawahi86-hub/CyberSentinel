@@ -1,91 +1,246 @@
-def analyze_security(headers, url, ssl_status):
+def calculate_risk_score(issues):
 
-    vulnerabilities = []
+    if not issues:
+        return 0
 
-    def add_vuln(name, desc, impact, fix, penalty):
-        vulnerabilities.append({
-            "name": name,
-            "description": desc,
-            "impact": impact,
-            "fix": fix,
-            "severity_penalty": penalty
-        })
 
-    # Start with perfect score
-    score = 100
+    total_score = 0
 
-    # ---------------- SSL CHECK ----------------
-    if not ssl_status:
-        add_vuln(
-            "Missing HTTPS (SSL/TLS)",
-            "Website is not using an encrypted HTTPS connection.",
-            "Data transmitted between users and the website may be intercepted.",
-            "Install a valid SSL/TLS certificate and redirect all traffic to HTTPS.",
-            30
+
+    for issue in issues:
+
+        cvss = issue.get(
+            "cvss",
+            issue.get(
+                "cvss_score",
+                0
+            )
         )
 
-    # ---------------- SECURITY HEADERS ----------------
-    security_headers = {
-        "Content-Security-Policy": (
-            "Missing Content-Security-Policy",
-            "Cross-Site Scripting (XSS) attacks may be easier.",
-            "Implement a strong Content-Security-Policy header.",
-            15
-        ),
-        "X-Frame-Options": (
-            "Missing X-Frame-Options",
-            "Website may be vulnerable to clickjacking.",
-            "Set X-Frame-Options to DENY or SAMEORIGIN.",
-            10
-        ),
-        "Strict-Transport-Security": (
+
+        try:
+
+            total_score += float(cvss)
+
+        except:
+
+            pass
+
+
+
+    average = total_score / len(issues)
+
+
+    # Convert CVSS average to security score
+
+    security_score = round(
+        average * 10,
+        2
+    )
+
+
+    return security_score
+
+
+
+
+
+def classify_risk(score):
+
+
+    if score <= 20:
+
+        return (
+            "LOW",
+            "SAFE"
+        )
+
+
+    elif score <= 40:
+
+        return (
+            "LOW",
+            "MOSTLY SAFE"
+        )
+
+
+    elif score <= 60:
+
+        return (
+            "MEDIUM",
+            "MODERATE RISK"
+        )
+
+
+    elif score <= 80:
+
+        return (
+            "HIGH",
+            "HIGH RISK"
+        )
+
+
+    else:
+
+        return (
+            "CRITICAL",
+            "CRITICAL RISK"
+        )
+
+
+
+
+
+
+def analyze_security(
+        headers,
+        url,
+        ssl_status
+):
+
+
+    issues=[]
+
+
+
+    # Header analysis
+
+    security_headers={
+
+
+        "Content-Security-Policy":
+        {
+            "title":
+            "Missing Content Security Policy",
+
+            "cvss":
+            5.3,
+
+            "severity":
+            "Medium",
+
+            "recommendation":
+            "Implement Content-Security-Policy header."
+
+        },
+
+
+        "Strict-Transport-Security":
+        {
+
+            "title":
             "Missing HSTS Header",
-            "Users could be vulnerable to protocol downgrade attacks.",
-            "Enable Strict-Transport-Security with an appropriate max-age.",
-            15
-        ),
-        "X-Content-Type-Options": (
-            "Missing X-Content-Type-Options",
-            "Browser MIME sniffing attacks may be possible.",
-            "Set X-Content-Type-Options to nosniff.",
-            10
-        )
+
+            "cvss":
+            5.3,
+
+            "severity":
+            "Medium",
+
+            "recommendation":
+            "Enable Strict-Transport-Security."
+
+        },
+
+
+        "X-Frame-Options":
+        {
+
+            "title":
+            "Missing Clickjacking Protection",
+
+            "cvss":
+            4.7,
+
+            "severity":
+            "Medium",
+
+            "recommendation":
+            "Enable X-Frame-Options."
+
+        },
+
+
+        "X-Content-Type-Options":
+        {
+
+            "title":
+            "Missing MIME Protection",
+
+            "cvss":
+            4.7,
+
+            "severity":
+            "Medium",
+
+            "recommendation":
+            "Enable X-Content-Type-Options."
+
+        }
+
     }
 
-    for header, values in security_headers.items():
+
+
+
+    for header,data in security_headers.items():
+
 
         if header not in headers:
 
-            add_vuln(
-                values[0],
-                values[1],
-                values[1],
-                values[2],
-                values[3]
-            )
 
-    # ---------------- SCORE ----------------
+            issues.append({
 
-    total_penalty = sum(v["severity_penalty"] for v in vulnerabilities)
+                "name":
+                data["title"],
 
-    score = max(0, 100 - total_penalty)
+                "description":
+                f"{header} security header is missing.",
 
-    # ---------------- RISK LEVEL ----------------
+                "impact":
+                "This reduces browser-based security protection.",
 
-    if score >= 85:
-        level = "LOW"
+                "fix":
+                data["recommendation"],
 
-    elif score >= 60:
-        level = "MEDIUM"
+                "cvss":
+                data["cvss"],
 
-    elif score >= 40:
-        level = "HIGH"
+                "severity":
+                data["severity"]
 
-    else:
-        level = "CRITICAL"
+            })
+
+
+
+
+    score = calculate_risk_score(
+        issues
+    )
+
+
+    level, verdict = classify_risk(
+        score
+    )
+
+
 
     return {
-        "score": score,
-        "level": level,
-        "issues": vulnerabilities
+
+
+        "score":
+        score,
+
+
+        "level":
+        level,
+
+
+        "verdict":
+        verdict,
+
+
+        "issues":
+        issues
+
     }

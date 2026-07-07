@@ -50,8 +50,8 @@ def check_open_ports(domain):
         except:
             pass
 
-
     return open_ports
+
 
 
 
@@ -107,13 +107,14 @@ def analyze_headers(headers):
 
 
 
+
 # ---------------------------------
 # Cookie Security Check
 # ---------------------------------
 
 def analyze_cookies(cookies):
 
-    findings=[]
+    findings = []
 
 
     for cookie in cookies:
@@ -169,6 +170,49 @@ def analyze_cookies(cookies):
 
 
 
+
+# ---------------------------------
+# URL NORMALIZATION
+# ---------------------------------
+
+def normalize_url(url):
+
+    url = url.strip()
+
+    url = url.replace(
+        " ",
+        ""
+    )
+
+
+    # Fix accidental w.w.w mistake
+
+    if url.startswith(
+        "w.w.w."
+    ):
+
+        url = url.replace(
+            "w.w.w.",
+            "www.",
+            1
+        )
+
+
+    # Add HTTPS
+
+    if not url.startswith(
+        ("http://", "https://")
+    ):
+
+        url = "https://" + url
+
+
+    return url
+
+
+
+
+
 # ---------------------------------
 # Main Website Scanner
 # ---------------------------------
@@ -178,19 +222,61 @@ def scan_website(url):
     try:
 
 
-        if not url.startswith("http"):
-            url="https://" + url
+        url = normalize_url(
+            url
+        )
 
 
-        parsed=urlparse(url)
 
-        domain=parsed.netloc
-
-
-        start=time.time()
+        parsed = urlparse(
+            url
+        )
 
 
-        response=requests.get(
+        domain = parsed.netloc
+
+
+
+        if not domain:
+
+
+            return {
+
+                "ip":
+                "Unknown",
+
+                "findings":[{
+
+                    "title":
+                    "Invalid URL",
+
+                    "severity":
+                    "INFO",
+
+                    "cvss":
+                    0,
+
+                    "description":
+                    "The provided URL is invalid.",
+
+                    "recommendation":
+                    "Enter a valid website address."
+
+                }],
+
+                "risk_score":
+                0
+
+            }
+
+
+
+
+        start = time.time()
+
+
+
+        response = requests.get(
 
             url,
 
@@ -199,24 +285,31 @@ def scan_website(url):
             allow_redirects=True,
 
             headers={
+
                 "User-Agent":
                 "CyberSentinel Security Scanner"
+
             }
 
         )
 
 
-        response_time=round(
+
+        response_time = round(
+
             (time.time()-start)*1000,
+
             2
+
         )
 
 
-        # IP Detection
 
         try:
 
-            ip=socket.gethostbyname(domain)
+            ip = socket.gethostbyname(
+                domain
+            )
 
         except:
 
@@ -224,40 +317,44 @@ def scan_website(url):
 
 
 
-        headers=dict(response.headers)
+        headers = dict(
+            response.headers
+        )
 
 
 
         findings=[]
 
 
-        # Header Scan
 
         findings.extend(
-            analyze_headers(headers)
+
+            analyze_headers(
+                headers
+            )
+
         )
 
 
 
-        # Cookie Scan
-
         findings.extend(
+
             analyze_cookies(
                 response.cookies
             )
+
         )
 
 
 
-        # Port Scan
+        ports = check_open_ports(
+            domain
+        )
 
-        ports=check_open_ports(domain)
 
-
-
-        # Open port risks
 
         if 21 in ports:
+
 
             findings.append({
 
@@ -280,36 +377,50 @@ def scan_website(url):
 
 
 
+
+
         return {
 
 
+            "url":
+
+            url,
+
+
             "ip":
+
             ip,
 
 
             "headers":
+
             headers,
 
 
             "ssl":
+
             response.url.startswith(
                 "https"
             ),
 
 
             "ports":
+
             ports,
 
 
             "http_status":
+
             response.status_code,
 
 
             "response_time":
+
             response_time,
 
 
             "server":
+
             headers.get(
                 "Server",
                 "Unknown"
@@ -317,6 +428,7 @@ def scan_website(url):
 
 
             "technology":
+
             headers.get(
                 "X-Powered-By",
                 "Not Disclosed"
@@ -324,22 +436,31 @@ def scan_website(url):
 
 
             "cookies":
+
             list(response.cookies),
 
 
             "findings":
+
             findings,
 
 
             "risk_score":
-            len(findings) * 10
 
+            len(findings) * 10,
+
+
+            "scan_status":
+
+            "Success"
 
         }
 
 
 
-    except Exception as e:
+
+
+    except requests.exceptions.RequestException:
 
 
         return {
@@ -383,12 +504,75 @@ def scan_website(url):
 
             "findings":[{
 
+                "title":
+                "Scan Failed",
+
+                "severity":
+                "INFO",
+
+                "cvss":
+                0,
+
+                "description":
+                "Website could not be reached or the URL is invalid.",
+
+                "recommendation":
+                "Verify the URL and check internet connectivity."
+
+            }],
+
+
+            "risk_score":
+            0,
+
+
+            "scan_status":
+            "Failed"
+
+        }
+
+
+
+    except Exception as e:
+
+
+        return {
+
+
+            "ip":
+            "Unknown",
+
+            "headers":
+            {},
+
+            "ssl":
+            False,
+
+            "ports":
+            [],
+
+            "http_status":
+            0,
+
+            "response_time":
+            0,
+
+            "server":
+            "Unknown",
+
+            "technology":
+            "Unknown",
+
+            "cookies":
+            [],
+
+            "findings":[{
 
                 "title":
                 "Scanner Error",
 
                 "severity":
-                "Info",
+                "INFO",
 
                 "cvss":
                 0,
@@ -397,12 +581,16 @@ def scan_website(url):
                 str(e),
 
                 "recommendation":
-                "Check URL and connectivity"
+                "Check URL and connectivity."
 
             }],
 
 
             "risk_score":
-            0
+            0,
+
+
+            "scan_status":
+            "Failed"
 
         }

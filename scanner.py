@@ -54,7 +54,6 @@ def check_open_ports(domain):
 
 
 
-
 # ---------------------------------
 # Security Header Analysis
 # ---------------------------------
@@ -66,38 +65,142 @@ def analyze_headers(headers):
 
     security_headers = {
 
-        "Content-Security-Policy":
-        "Missing Content Security Policy",
+        "Content-Security-Policy": {
 
-        "Strict-Transport-Security":
-        "Missing HTTPS Security Policy",
+            "title":
+            "Missing Content Security Policy",
 
-        "X-Frame-Options":
-        "Missing Clickjacking Protection",
+            "cvss":
+            5.3,
 
-        "X-Content-Type-Options":
-        "Missing MIME Protection"
+            "severity":
+            "Medium",
+
+            "simple":
+            "Your website is missing an additional browser safety setting that helps block harmful scripts.",
+
+            "impact":
+            "Attackers may have a better chance of injecting unwanted scripts into website pages.",
+
+            "technical":
+            "The Content-Security-Policy header reduces the impact of Cross-Site Scripting attacks.",
+
+            "fix":
+            "Implement a Content-Security-Policy security header."
+
+        },
+
+
+        "Strict-Transport-Security": {
+
+            "title":
+            "Missing HTTPS Security Policy",
+
+            "cvss":
+            5.3,
+
+            "severity":
+            "Medium",
+
+            "simple":
+            "Your website does not force browsers to always use secure HTTPS connections.",
+
+            "impact":
+            "Users may be exposed to downgrade or insecure connection risks.",
+
+            "technical":
+            "HTTP Strict Transport Security (HSTS) instructs browsers to use HTTPS only.",
+
+            "fix":
+            "Enable Strict-Transport-Security header."
+
+        },
+
+
+        "X-Frame-Options": {
+
+            "title":
+            "Missing Clickjacking Protection",
+
+            "cvss":
+            4.7,
+
+            "severity":
+            "Medium",
+
+            "simple":
+            "Your website has limited protection against being displayed inside another website.",
+
+            "impact":
+            "Attackers may attempt to trick users into clicking hidden website elements.",
+
+            "technical":
+            "X-Frame-Options prevents unauthorized iframe embedding.",
+
+            "fix":
+            "Enable X-Frame-Options: DENY or SAMEORIGIN."
+
+        },
+
+
+        "X-Content-Type-Options": {
+
+            "title":
+            "Missing MIME Protection",
+
+            "cvss":
+            4.7,
+
+            "severity":
+            "Medium",
+
+            "simple":
+            "Your website is missing an extra protection that helps browsers handle files safely.",
+
+            "impact":
+            "Certain browser-based attacks may become easier to perform.",
+
+            "technical":
+            "X-Content-Type-Options prevents MIME type sniffing attacks.",
+
+            "fix":
+            "Enable X-Content-Type-Options header."
+
+        }
 
     }
 
 
-    for header, message in security_headers.items():
+
+    for header, data in security_headers.items():
 
         if header not in headers:
 
             findings.append({
 
-                "title": message,
+                "title":
+                data["title"],
 
-                "severity": "Medium",
+                "severity":
+                data["severity"],
 
-                "cvss": 5.3,
+                "cvss":
+                data["cvss"],
+
+                "simple_explanation":
+                data["simple"],
+
+                "business_impact":
+                data["impact"],
+
+                "technical_explanation":
+                data["technical"],
 
                 "description":
-                f"{header} header is missing",
+                data["technical"],
 
                 "recommendation":
-                f"Implement {header} security header"
+                data["fix"]
 
             })
 
@@ -133,16 +236,27 @@ def analyze_cookies(cookies):
                 "cvss":
                 3.1,
 
+                "simple_explanation":
+                "A website cookie is not marked as secure.",
+
+                "business_impact":
+                "A poorly protected cookie could increase the risk of account session exposure.",
+
+                "technical_explanation":
+                "Cookies without the Secure attribute may be transmitted over insecure connections.",
+
                 "description":
-                f"Cookie {cookie.name} is not secured",
+                f"Cookie {cookie.name} is not secured.",
 
                 "recommendation":
-                "Enable Secure cookie attribute"
+                "Enable Secure cookie attribute."
 
             })
 
 
+
         if "httponly" not in cookie._rest:
+
 
             findings.append({
 
@@ -155,11 +269,20 @@ def analyze_cookies(cookies):
                 "cvss":
                 4.7,
 
+                "simple_explanation":
+                "A website cookie may be readable by browser scripts.",
+
+                "business_impact":
+                "This could increase the impact of certain browser-based attacks.",
+
+                "technical_explanation":
+                "HttpOnly prevents JavaScript access to sensitive cookies.",
+
                 "description":
-                f"Cookie {cookie.name} may be accessible through scripts",
+                f"Cookie {cookie.name} may be accessible through scripts.",
 
                 "recommendation":
-                "Enable HttpOnly flag"
+                "Enable HttpOnly flag."
 
             })
 
@@ -169,10 +292,8 @@ def analyze_cookies(cookies):
 
 
 
-
-
 # ---------------------------------
-# URL NORMALIZATION
+# URL Normalization
 # ---------------------------------
 
 def normalize_url(url):
@@ -185,11 +306,7 @@ def normalize_url(url):
     )
 
 
-    # Fix accidental w.w.w mistake
-
-    if url.startswith(
-        "w.w.w."
-    ):
+    if url.startswith("w.w.w."):
 
         url = url.replace(
             "w.w.w.",
@@ -197,8 +314,6 @@ def normalize_url(url):
             1
         )
 
-
-    # Add HTTPS
 
     if not url.startswith(
         ("http://", "https://")
@@ -214,7 +329,7 @@ def normalize_url(url):
 
 
 # ---------------------------------
-# Main Website Scanner
+# Main Scanner
 # ---------------------------------
 
 def scan_website(url):
@@ -222,57 +337,16 @@ def scan_website(url):
     try:
 
 
-        url = normalize_url(
-            url
-        )
+        url = normalize_url(url)
 
 
-
-        parsed = urlparse(
-            url
-        )
-
+        parsed = urlparse(url)
 
         domain = parsed.netloc
 
 
 
-        if not domain:
-
-
-            return {
-
-                "ip":
-                "Unknown",
-
-                "findings":[{
-
-                    "title":
-                    "Invalid URL",
-
-                    "severity":
-                    "INFO",
-
-                    "cvss":
-                    0,
-
-                    "description":
-                    "The provided URL is invalid.",
-
-                    "recommendation":
-                    "Enter a valid website address."
-
-                }],
-
-                "risk_score":
-                0
-
-            }
-
-
-
-
-        start = time.time()
+        response_start = time.time()
 
 
 
@@ -294,22 +368,18 @@ def scan_website(url):
         )
 
 
-
         response_time = round(
 
-            (time.time()-start)*1000,
+            (time.time()-response_start)*1000,
 
             2
 
         )
 
 
-
         try:
 
-            ip = socket.gethostbyname(
-                domain
-            )
+            ip = socket.gethostbyname(domain)
 
         except:
 
@@ -326,35 +396,24 @@ def scan_website(url):
         findings=[]
 
 
-
         findings.extend(
-
-            analyze_headers(
-                headers
-            )
-
+            analyze_headers(headers)
         )
 
 
-
         findings.extend(
-
             analyze_cookies(
                 response.cookies
             )
-
         )
 
 
 
-        ports = check_open_ports(
-            domain
-        )
+        ports = check_open_ports(domain)
 
 
 
         if 21 in ports:
-
 
             findings.append({
 
@@ -367,15 +426,22 @@ def scan_website(url):
                 "cvss":
                 7.5,
 
+                "simple_explanation":
+                "An old file transfer service is publicly available.",
+
+                "business_impact":
+                "Attackers may attempt unauthorized access or data theft.",
+
+                "technical_explanation":
+                "FTP transmits credentials without modern encryption.",
+
                 "description":
-                "FTP service detected",
+                "FTP service detected.",
 
                 "recommendation":
-                "Disable FTP and use SFTP"
+                "Disable FTP and use SFTP."
 
             })
-
-
 
 
 
@@ -383,80 +449,53 @@ def scan_website(url):
 
 
             "url":
-
             url,
 
-
             "ip":
-
             ip,
 
-
             "headers":
-
             headers,
 
-
             "ssl":
-
             response.url.startswith(
                 "https"
             ),
 
-
             "ports":
-
             ports,
 
-
             "http_status":
-
             response.status_code,
 
-
             "response_time":
-
             response_time,
 
-
             "server":
-
             headers.get(
                 "Server",
                 "Unknown"
             ),
 
-
             "technology":
-
             headers.get(
                 "X-Powered-By",
                 "Not Disclosed"
             ),
 
-
             "cookies":
-
             list(response.cookies),
 
-
             "findings":
-
             findings,
 
-
             "risk_score":
-
             len(findings) * 10,
 
-
             "scan_status":
-
             "Success"
 
         }
-
-
 
 
 
@@ -464,43 +503,6 @@ def scan_website(url):
 
 
         return {
-
-
-            "ip":
-            "Unknown",
-
-
-            "headers":
-            {},
-
-
-            "ssl":
-            False,
-
-
-            "ports":
-            [],
-
-
-            "http_status":
-            0,
-
-
-            "response_time":
-            0,
-
-
-            "server":
-            "Unknown",
-
-
-            "technology":
-            "Unknown",
-
-
-            "cookies":
-            [],
-
 
             "findings":[{
 
@@ -513,82 +515,25 @@ def scan_website(url):
                 "cvss":
                 0,
 
+                "simple_explanation":
+                "The website could not be checked.",
+
+                "business_impact":
+                "No security conclusion can be made until the website is reachable.",
+
+                "technical_explanation":
+                "The scanner could not establish a connection.",
+
                 "description":
-                "Website could not be reached or the URL is invalid.",
+                "Website unreachable or invalid URL.",
 
                 "recommendation":
-                "Verify the URL and check internet connectivity."
+                "Verify the website address."
 
             }],
 
-
             "risk_score":
             0,
-
-
-            "scan_status":
-            "Failed"
-
-        }
-
-
-
-    except Exception as e:
-
-
-        return {
-
-
-            "ip":
-            "Unknown",
-
-            "headers":
-            {},
-
-            "ssl":
-            False,
-
-            "ports":
-            [],
-
-            "http_status":
-            0,
-
-            "response_time":
-            0,
-
-            "server":
-            "Unknown",
-
-            "technology":
-            "Unknown",
-
-            "cookies":
-            [],
-
-            "findings":[{
-
-                "title":
-                "Scanner Error",
-
-                "severity":
-                "INFO",
-
-                "cvss":
-                0,
-
-                "description":
-                str(e),
-
-                "recommendation":
-                "Check URL and connectivity."
-
-            }],
-
-
-            "risk_score":
-            0,
-
 
             "scan_status":
             "Failed"

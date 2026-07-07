@@ -12,61 +12,40 @@ CyberSentinel SOC Dashboard
 
 <style>
 
-
 body {
-
     margin:0;
-
-    font-family:
-    Arial, sans-serif;
-
+    font-family:Arial,sans-serif;
     background:#0b0f19;
-
     color:white;
-
 }
-
 
 
 .header {
 
     background:#111827;
-
     padding:25px;
-
     text-align:center;
-
     font-size:28px;
-
     font-weight:bold;
-
-    border-bottom:
-    2px solid #1f2937;
+    border-bottom:2px solid #1f2937;
 
 }
-
 
 
 .container {
 
     width:85%;
-
     margin:auto;
-
     padding:25px;
 
 }
 
 
 
-
 .scan-box {
 
-
     background:#111827;
-
     padding:25px;
-
     border-radius:12px;
 
 }
@@ -75,14 +54,10 @@ body {
 
 input {
 
-
     width:70%;
-
     padding:14px;
-
-    border-radius:6px;
-
     border:none;
+    border-radius:6px;
 
 }
 
@@ -90,17 +65,11 @@ input {
 
 button {
 
-
     padding:14px 25px;
-
     background:#2563eb;
-
     color:white;
-
     border:none;
-
     border-radius:6px;
-
     cursor:pointer;
 
 }
@@ -115,15 +84,10 @@ button:hover {
 
 
 
-
-
 .cards {
 
-
     display:flex;
-
     gap:20px;
-
     margin-top:25px;
 
 }
@@ -132,17 +96,11 @@ button:hover {
 
 .card {
 
-
     flex:1;
-
     padding:25px;
-
     border-radius:12px;
-
     text-align:center;
-
     font-size:18px;
-
     font-weight:bold;
 
 }
@@ -150,30 +108,22 @@ button:hover {
 
 
 .safe {
-
     background:#15803d;
-
 }
 
 
 .medium {
-
     background:#d97706;
-
 }
 
 
 .high {
-
     background:#dc2626;
-
 }
 
 
 .critical {
-
     background:#7f1d1d;
-
 }
 
 
@@ -181,13 +131,9 @@ button:hover {
 
 .section {
 
-
     background:#111827;
-
     margin-top:25px;
-
     padding:25px;
-
     border-radius:12px;
 
 }
@@ -197,12 +143,8 @@ button:hover {
 
 .info-grid {
 
-
     display:grid;
-
-    grid-template-columns:
-    repeat(2,1fr);
-
+    grid-template-columns:repeat(2,1fr);
     gap:15px;
 
 }
@@ -211,55 +153,59 @@ button:hover {
 
 .info {
 
-
     background:#1f2937;
-
     padding:15px;
-
     border-radius:8px;
 
 }
 
 
 
-
 ul {
 
-
     padding:0;
-
     list-style:none;
 
 }
 
 
 
-
 li {
 
-
     background:#1f2937;
-
-    padding:18px;
-
+    padding:20px;
     margin-bottom:15px;
-
     border-radius:10px;
 
 }
 
 
 
+.explain {
+
+    background:#0f172a;
+    padding:15px;
+    border-radius:8px;
+    margin-top:15px;
+
+}
+
+
+
+.label {
+
+    color:#60a5fa;
+    font-weight:bold;
+
+}
+
+
 
 .badge {
 
-
     padding:5px 12px;
-
     border-radius:20px;
-
     font-size:12px;
-
     font-weight:bold;
 
 }
@@ -267,30 +213,22 @@ li {
 
 
 .low {
-
     background:#16a34a;
-
 }
 
 
 .med {
-
     background:#f59e0b;
-
 }
 
 
 .highb {
-
     background:#dc2626;
-
 }
 
 
 .criticalb {
-
     background:#7f1d1d;
-
 }
 
 
@@ -298,10 +236,7 @@ li {
 .small {
 
     color:#cbd5e1;
-
     font-size:14px;
-
-    margin-top:10px;
 
 }
 
@@ -309,9 +244,7 @@ li {
 
 .download {
 
-
     color:#60a5fa;
-
     font-size:18px;
 
 }
@@ -320,9 +253,7 @@ li {
 
 .empty {
 
-
     text-align:center;
-
     color:#94a3b8;
 
 }
@@ -349,19 +280,17 @@ li {
 <div class="container">
 
 
+
 <div class="scan-box">
 
 
 <form method="POST">
 
-
 <input
-
 type="text"
-
 name="url"
-
 placeholder="Enter website URL">
+
 
 <button>
 
@@ -378,6 +307,7 @@ Run Security Scan
 
 
 
+
 {% if result %}
 
 
@@ -388,19 +318,15 @@ Run Security Scan
 <div class="card
 
 {% if result.risk_level == 'LOW' %}
-
 safe
 
 {% elif result.risk_level == 'MEDIUM' %}
-
 medium
 
 {% elif result.risk_level == 'HIGH' %}
-
 high
 
 {% else %}
-
 critical
 
 {% endif %}
@@ -414,8 +340,8 @@ Risk Score
 
 {{result.risk_score}}
 
-
 </div>
+
 
 
 
@@ -423,19 +349,15 @@ Risk Score
 <div class="card
 
 {% if result.risk_level == 'LOW' %}
-
 safe
 
 {% elif result.risk_level == 'MEDIUM' %}
-
 medium
 
 {% elif result.risk_level == 'HIGH' %}
-
 high
 
 {% else %}
-
 critical
 
 {% endif %}
@@ -449,30 +371,13 @@ Risk Level
 
 {{result.risk_level}}
 
-
 </div>
 
 
 
 
 
-<div class="card
-
-{% if result.safety_verdict == 'SAFE' %}
-
-safe
-
-{% elif result.safety_verdict == 'MODERATE RISK' %}
-
-medium
-
-{% else %}
-
-high
-
-{% endif %}
-
-">
+<div class="card high">
 
 
 Verdict
@@ -481,11 +386,12 @@ Verdict
 
 {{result.safety_verdict}}
 
-
 </div>
 
 
+
 </div>
+
 
 
 
@@ -493,7 +399,6 @@ Verdict
 
 
 <div class="section">
-
 
 <h3>
 Executive Summary
@@ -515,110 +420,62 @@ Executive Summary
 
 
 
-<div class="section">
 
+<div class="section">
 
 <h3>
 Technical Information
 </h3>
 
 
-
 <div class="info-grid">
 
 
 <div class="info">
-
-<b>Website</b>
-
-<br>
-
+<b>Website</b><br>
 {{result.url}}
-
 </div>
 
 
-
 <div class="info">
-
-<b>IP Address</b>
-
-<br>
-
+<b>IP Address</b><br>
 {{result.ip}}
-
 </div>
 
 
-
 <div class="info">
-
-<b>HTTP Status</b>
-
-<br>
-
+<b>HTTP Status</b><br>
 {{result.http_status}}
-
 </div>
 
 
-
 <div class="info">
-
-<b>SSL Enabled</b>
-
-<br>
-
+<b>SSL Enabled</b><br>
 {{result.ssl}}
-
 </div>
 
 
-
 <div class="info">
-
-<b>Server</b>
-
-<br>
-
+<b>Server</b><br>
 {{result.server}}
-
 </div>
 
 
-
 <div class="info">
-
-<b>Technology</b>
-
-<br>
-
+<b>Technology</b><br>
 {{result.technology}}
-
 </div>
 
 
-
 <div class="info">
-
-<b>Response Time</b>
-
-<br>
-
+<b>Response Time</b><br>
 {{result.response_time}} ms
-
 </div>
-
 
 
 <div class="info">
-
-<b>Open Ports</b>
-
-<br>
-
+<b>Open Ports</b><br>
 {{result.ports}}
-
 </div>
 
 
@@ -627,6 +484,7 @@ Technical Information
 
 
 </div>
+
 
 
 
@@ -639,7 +497,7 @@ Technical Information
 
 
 <h3>
-Security Vulnerabilities (CVSS)
+Security Vulnerabilities & Improvements
 </h3>
 
 
@@ -649,10 +507,9 @@ Security Vulnerabilities (CVSS)
 
 <div class="empty">
 
-✅ No vulnerabilities detected
+✅ No security issues detected
 
 </div>
-
 
 
 {% else %}
@@ -661,48 +518,86 @@ Security Vulnerabilities (CVSS)
 <ul>
 
 
+
 {% for issue in result.issues %}
+
 
 
 <li>
 
 
-<b>
 
-{{issue.name}}
+<h3>
 
-</b>
+⚠️ {{issue.name}}
 
-
-<br><br>
+</h3>
 
 
 
-<div class="small">
+<div class="explain">
 
 
-{{issue.description}}
+<p>
 
+<span class="label">
+What does this mean?
+</span>
 
 <br>
 
+{{issue.simple_explanation or issue.description}}
 
-Recommendation:
+</p>
 
-{{issue.recommendation or issue.fix}}
+
+
+
+<p>
+
+<span class="label">
+Why does this matter?
+</span>
+
+<br>
+
+{{issue.business_impact or "Security improvement recommended."}}
+
+</p>
+
+
+
+
+<p>
+
+<span class="label">
+How to fix?
+</span>
+
+<br>
+
+{{issue.recommendation}}
+
+</p>
+
 
 
 </div>
 
 
 
+
 <br>
 
 
-CVSS:
 
+<b>
 
-{{issue.cvss or issue.cvss_score}}
+CVSS Score:
+
+</b>
+
+{{issue.cvss_score or issue.cvss}}
 
 
 
@@ -739,6 +634,30 @@ criticalb
 
 
 
+
+
+
+<div class="explain">
+
+
+<span class="label">
+
+Technical Details
+
+</span>
+
+
+<p class="small">
+
+{{issue.technical_explanation or issue.description}}
+
+</p>
+
+
+</div>
+
+
+
 </li>
 
 
@@ -748,7 +667,6 @@ criticalb
 
 
 </ul>
-
 
 
 {% endif %}
@@ -785,6 +703,7 @@ href="/download-report">
 
 
 </div>
+
 
 
 </body>

@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, send_file
+
 from urllib.parse import urlparse
 
 import os
@@ -13,7 +14,6 @@ from report import generate_pdf
 app = Flask(__name__)
 
 
-
 os.makedirs(
     "reports",
     exist_ok=True
@@ -21,11 +21,101 @@ os.makedirs(
 
 
 
+
+# ---------------------------------
+# Calculate Risk Score
+# ---------------------------------
+
+def calculate_risk_score(findings):
+
+    if not findings:
+        return 0
+
+
+    total = 0
+
+
+    for item in findings:
+
+        total += float(
+            item.get(
+                "cvss",
+                0
+            )
+        )
+
+
+    # Limit score to 100
+
+    score = min(
+        round(total,1),
+        100
+    )
+
+
+    return score
+
+
+
+
+
+# ---------------------------------
+# Risk Classification
+# ---------------------------------
+
+def classify_risk(score):
+
+
+    if score <= 20:
+
+        return (
+            "LOW",
+            "SAFE",
+            "The website demonstrates a good security posture. Only minor or no security issues were identified."
+        )
+
+
+    elif score <= 50:
+
+        return (
+            "MEDIUM",
+            "MODERATE RISK",
+            "Some security weaknesses were identified. Recommended fixes should be implemented."
+        )
+
+
+    elif score <= 80:
+
+        return (
+            "HIGH",
+            "HIGH RISK",
+            "Multiple security issues were detected. Immediate security improvements are recommended."
+        )
+
+
+    else:
+
+        return (
+            "CRITICAL",
+            "CRITICAL RISK",
+            "Critical security problems were detected. The website requires immediate review."
+        )
+
+
+
+
+
+
+
 # ---------------------------------
 # HOME PAGE
 # ---------------------------------
 
-@app.route("/", methods=["GET","POST"])
+@app.route(
+    "/",
+    methods=["GET","POST"]
+)
+
 def index():
 
 
@@ -36,14 +126,14 @@ def index():
     if request.method=="POST":
 
 
-        url=request.form.get(
+        user_url=request.form.get(
             "url",
             ""
         ).strip()
 
 
 
-        if not url:
+        if not user_url:
 
             return render_template(
                 "index.html",
@@ -52,29 +142,15 @@ def index():
 
 
 
-        if not url.startswith(
-            "http"
-        ):
-
-            url="https://" + url
-
-
-
-        domain=urlparse(
-            url
-        ).netloc
-
-
-
-        # -----------------------------
-        # RUN SCANNER
-        # -----------------------------
-
         try:
 
+
+            # Scanner handles normalization
+
             scan=scan_website(
-                url
+                user_url
             )
+
 
 
         except Exception:
@@ -86,6 +162,9 @@ def index():
 
 
             scan={
+
+                "url":
+                user_url,
 
                 "ip":
                 "Unknown",
@@ -100,7 +179,7 @@ def index():
                 [],
 
                 "http_status":
-                0,
+                "Unavailable",
 
                 "response_time":
                 0,
@@ -111,15 +190,30 @@ def index():
                 "technology":
                 "Unknown",
 
-                "cookies":
-                [],
+                "findings":[{
 
-                "findings":
-                [],
+                    "name":
+                    "Scanner Error",
 
-                "risk_score":
-                0
+                    "title":
+                    "Scanner Error",
+
+                    "severity":
+                    "INFO",
+
+                    "cvss":
+                    0,
+
+                    "description":
+                    "Scanner failed.",
+
+                    "recommendation":
+                    "Check URL."
+
+                }]
+
             }
+
 
 
 
@@ -130,157 +224,191 @@ def index():
 
 
 
-        # -----------------------------
-        # RISK CALCULATION
-        # -----------------------------
-
-
-        risk_score=scan.get(
-            "risk_score",
-            0
+        risk_score=calculate_risk_score(
+            findings
         )
 
 
 
-        if risk_score <=20:
+        risk_level, verdict, summary = classify_risk(
+            risk_score
+        )
 
-            risk_level="LOW"
-            verdict="SAFE"
 
 
-            summary=(
-
-                "The website demonstrates "
-                "a good security posture. "
-                "Only minor or no security "
-                "issues were identified."
-
+        parsed=urlparse(
+            scan.get(
+                "url",
+                user_url
             )
+        )
 
 
 
-        elif risk_score <=50:
+        # ---------------------------------
+        # Prepare Issues For Dashboard/PDF
+        # ---------------------------------
+
+        issues=[]
 
 
-            risk_level="MEDIUM"
-            verdict="MODERATE RISK"
+        for finding in findings:
 
 
-            summary=(
+            issues.append({
 
-                "Some security weaknesses "
-                "were identified. "
-                "Recommended fixes should "
-                "be implemented."
-
-            )
-
-
-
-        elif risk_score <=80:
+                "name":
+                finding.get(
+                    "name",
+                    finding.get(
+                        "title",
+                        ""
+                    )
+                ),
 
 
-            risk_level="HIGH"
-            verdict="HIGH RISK"
+                "description":
+                finding.get(
+                    "description",
+                    ""
+                ),
 
 
-            summary=(
-
-                "Multiple security issues "
-                "were detected. Immediate "
-                "security improvements are "
-                "recommended."
-
-            )
+                "impact":
+                finding.get(
+                    "business_impact",
+                    ""
+                ),
 
 
-
-        else:
-
-
-            risk_level="CRITICAL"
-            verdict="CRITICAL RISK"
-
-
-            summary=(
-
-                "Critical security problems "
-                "were detected. The website "
-                "requires immediate review."
-
-            )
+                "fix":
+                finding.get(
+                    "recommendation",
+                    ""
+                ),
 
 
+                "recommendation":
+                finding.get(
+                    "recommendation",
+                    ""
+                ),
+
+
+                "simple_explanation":
+                finding.get(
+                    "simple_explanation",
+                    ""
+                ),
+
+
+                "technical_explanation":
+                finding.get(
+                    "technical_explanation",
+                    ""
+                ),
+
+
+                "cvss":
+                finding.get(
+                    "cvss",
+                    0
+                ),
+
+
+                "cvss_score":
+                finding.get(
+                    "cvss",
+                    0
+                ),
+
+
+                "severity":
+                finding.get(
+                    "severity",
+                    "INFO"
+                )
+
+            })
 
 
 
-        # -----------------------------
-        # FINAL RESULT
-        # -----------------------------
 
 
         result={
 
 
             "url":
-            url,
+            scan.get(
+                "url",
+                user_url
+            ),
 
 
             "domain":
-            domain,
+            parsed.netloc,
 
 
             "ip":
             scan.get(
-                "ip"
+                "ip",
+                "Unknown"
             ),
 
 
             "http_status":
             scan.get(
-                "http_status"
+                "http_status",
+                "Unknown"
             ),
 
 
             "headers":
             scan.get(
-                "headers"
+                "headers",
+                {}
             ),
 
 
             "ssl":
             scan.get(
-                "ssl"
+                "ssl",
+                False
             ),
 
 
             "ports":
             scan.get(
-                "ports"
+                "ports",
+                []
             ),
 
 
             "server":
             scan.get(
-                "server"
+                "server",
+                "Unknown"
             ),
 
 
             "technology":
             scan.get(
-                "technology"
+                "technology",
+                "Unknown"
             ),
 
 
             "response_time":
             scan.get(
-                "response_time"
+                "response_time",
+                0
             ),
 
 
             "cookies":
             scan.get(
-                "cookies"
+                "cookies",
+                []
             ),
 
 
@@ -301,17 +429,12 @@ def index():
 
 
             "issues":
-            findings
+            issues
 
         }
 
 
 
-
-
-        # -----------------------------
-        # CREATE PDF
-        # -----------------------------
 
         try:
 
@@ -329,6 +452,8 @@ def index():
 
 
 
+
+
     return render_template(
         "index.html",
         result=result
@@ -338,8 +463,11 @@ def index():
 
 
 
+
+
+
 # ---------------------------------
-# DOWNLOAD PDF
+# DOWNLOAD REPORT
 # ---------------------------------
 
 @app.route(
@@ -363,6 +491,7 @@ def download_report():
 
 
     return "Report not found",404
+
 
 
 

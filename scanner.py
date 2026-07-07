@@ -47,10 +47,15 @@ def check_open_ports(domain):
 
             sock.close()
 
+
         except:
+
             pass
 
+
     return open_ports
+
+
 
 
 
@@ -65,6 +70,7 @@ def analyze_headers(headers):
 
     security_headers = {
 
+
         "Content-Security-Policy": {
 
             "title":
@@ -77,21 +83,23 @@ def analyze_headers(headers):
             "Medium",
 
             "simple":
-            "Your website is missing an additional browser safety setting that helps block harmful scripts.",
+            "Your website is missing an extra browser security setting that helps block harmful scripts.",
 
             "impact":
-            "Attackers may have a better chance of injecting unwanted scripts into website pages.",
+            "Attackers may have a higher chance of injecting unwanted scripts into website pages.",
 
             "technical":
-            "The Content-Security-Policy header reduces the impact of Cross-Site Scripting attacks.",
+            "Content-Security-Policy reduces the impact of Cross-Site Scripting attacks.",
 
             "fix":
-            "Implement a Content-Security-Policy security header."
+            "Implement Content-Security-Policy security header."
 
         },
 
 
+
         "Strict-Transport-Security": {
+
 
             "title":
             "Missing HTTPS Security Policy",
@@ -106,10 +114,10 @@ def analyze_headers(headers):
             "Your website does not force browsers to always use secure HTTPS connections.",
 
             "impact":
-            "Users may be exposed to downgrade or insecure connection risks.",
+            "Users may be exposed to insecure connection downgrade attacks.",
 
             "technical":
-            "HTTP Strict Transport Security (HSTS) instructs browsers to use HTTPS only.",
+            "HSTS instructs browsers to use HTTPS only.",
 
             "fix":
             "Enable Strict-Transport-Security header."
@@ -117,7 +125,9 @@ def analyze_headers(headers):
         },
 
 
+
         "X-Frame-Options": {
+
 
             "title":
             "Missing Clickjacking Protection",
@@ -132,7 +142,7 @@ def analyze_headers(headers):
             "Your website has limited protection against being displayed inside another website.",
 
             "impact":
-            "Attackers may attempt to trick users into clicking hidden website elements.",
+            "Attackers may trick users into clicking hidden elements.",
 
             "technical":
             "X-Frame-Options prevents unauthorized iframe embedding.",
@@ -143,7 +153,9 @@ def analyze_headers(headers):
         },
 
 
+
         "X-Content-Type-Options": {
+
 
             "title":
             "Missing MIME Protection",
@@ -155,13 +167,13 @@ def analyze_headers(headers):
             "Medium",
 
             "simple":
-            "Your website is missing an extra protection that helps browsers handle files safely.",
+            "Your website is missing browser file protection settings.",
 
             "impact":
-            "Certain browser-based attacks may become easier to perform.",
+            "Some browser attacks may become easier.",
 
             "technical":
-            "X-Content-Type-Options prevents MIME type sniffing attacks.",
+            "X-Content-Type-Options prevents MIME sniffing attacks.",
 
             "fix":
             "Enable X-Content-Type-Options header."
@@ -172,32 +184,46 @@ def analyze_headers(headers):
 
 
 
-    for header, data in security_headers.items():
+
+    for header,data in security_headers.items():
+
 
         if header not in headers:
+
 
             findings.append({
 
                 "title":
                 data["title"],
 
+
+                "name":
+                data["title"],
+
+
                 "severity":
                 data["severity"],
+
 
                 "cvss":
                 data["cvss"],
 
+
                 "simple_explanation":
                 data["simple"],
+
 
                 "business_impact":
                 data["impact"],
 
+
                 "technical_explanation":
                 data["technical"],
 
+
                 "description":
                 data["technical"],
+
 
                 "recommendation":
                 data["fix"]
@@ -211,13 +237,14 @@ def analyze_headers(headers):
 
 
 
+
 # ---------------------------------
-# Cookie Security Check
+# Cookie Analysis
 # ---------------------------------
 
 def analyze_cookies(cookies):
 
-    findings = []
+    findings=[]
 
 
     for cookie in cookies:
@@ -225,9 +252,13 @@ def analyze_cookies(cookies):
 
         if not cookie.secure:
 
+
             findings.append({
 
                 "title":
+                "Cookie Missing Secure Flag",
+
+                "name":
                 "Cookie Missing Secure Flag",
 
                 "severity":
@@ -236,17 +267,22 @@ def analyze_cookies(cookies):
                 "cvss":
                 3.1,
 
+
                 "simple_explanation":
                 "A website cookie is not marked as secure.",
 
+
                 "business_impact":
-                "A poorly protected cookie could increase the risk of account session exposure.",
+                "Session information may have increased exposure risk.",
+
 
                 "technical_explanation":
-                "Cookies without the Secure attribute may be transmitted over insecure connections.",
+                "Cookies without Secure attribute may be transmitted insecurely.",
+
 
                 "description":
                 f"Cookie {cookie.name} is not secured.",
+
 
                 "recommendation":
                 "Enable Secure cookie attribute."
@@ -263,23 +299,31 @@ def analyze_cookies(cookies):
                 "title":
                 "Cookie Missing HttpOnly Flag",
 
+                "name":
+                "Cookie Missing HttpOnly Flag",
+
                 "severity":
                 "Medium",
 
                 "cvss":
                 4.7,
 
+
                 "simple_explanation":
-                "A website cookie may be readable by browser scripts.",
+                "A browser script may be able to access this cookie.",
+
 
                 "business_impact":
-                "This could increase the impact of certain browser-based attacks.",
+                "This can increase the impact of browser attacks.",
+
 
                 "technical_explanation":
                 "HttpOnly prevents JavaScript access to sensitive cookies.",
 
+
                 "description":
                 f"Cookie {cookie.name} may be accessible through scripts.",
+
 
                 "recommendation":
                 "Enable HttpOnly flag."
@@ -292,37 +336,48 @@ def analyze_cookies(cookies):
 
 
 
+
 # ---------------------------------
 # URL Normalization
 # ---------------------------------
 
 def normalize_url(url):
 
-    url = url.strip()
 
-    url = url.replace(
+    url=url.strip()
+
+
+    url=url.replace(
         " ",
         ""
     )
 
 
-    if url.startswith("w.w.w."):
 
-        url = url.replace(
+    clean=url.replace(
+        "https://",
+        ""
+    ).replace(
+        "http://",
+        ""
+    )
+
+
+
+    if clean.startswith(
+        "w.w.w."
+    ):
+
+        clean=clean.replace(
             "w.w.w.",
             "www.",
             1
         )
 
 
-    if not url.startswith(
-        ("http://", "https://")
-    ):
 
-        url = "https://" + url
+    return "https://" + clean
 
-
-    return url
 
 
 
@@ -334,23 +389,25 @@ def normalize_url(url):
 
 def scan_website(url):
 
+
     try:
 
 
-        url = normalize_url(url)
+        url=normalize_url(url)
 
 
-        parsed = urlparse(url)
-
-        domain = parsed.netloc
+        parsed=urlparse(url)
 
 
-
-        response_start = time.time()
+        domain=parsed.netloc
 
 
 
-        response = requests.get(
+        start=time.time()
+
+
+
+        response=requests.get(
 
             url,
 
@@ -368,18 +425,21 @@ def scan_website(url):
         )
 
 
-        response_time = round(
 
-            (time.time()-response_start)*1000,
+        response_time=round(
+
+            (time.time()-start)*1000,
 
             2
 
         )
 
 
+
         try:
 
-            ip = socket.gethostbyname(domain)
+            ip=socket.gethostbyname(domain)
+
 
         except:
 
@@ -387,7 +447,8 @@ def scan_website(url):
 
 
 
-        headers = dict(
+
+        headers=dict(
             response.headers
         )
 
@@ -396,28 +457,43 @@ def scan_website(url):
         findings=[]
 
 
+
         findings.extend(
+
             analyze_headers(headers)
+
         )
 
 
+
         findings.extend(
+
             analyze_cookies(
                 response.cookies
             )
+
         )
 
 
 
-        ports = check_open_ports(domain)
+
+        ports=check_open_ports(
+            domain
+        )
+
+
 
 
 
         if 21 in ports:
 
+
             findings.append({
 
                 "title":
+                "FTP Port Open",
+
+                "name":
                 "FTP Port Open",
 
                 "severity":
@@ -426,22 +502,102 @@ def scan_website(url):
                 "cvss":
                 7.5,
 
+
                 "simple_explanation":
                 "An old file transfer service is publicly available.",
 
+
                 "business_impact":
-                "Attackers may attempt unauthorized access or data theft.",
+                "Attackers may attempt unauthorized access.",
+
 
                 "technical_explanation":
-                "FTP transmits credentials without modern encryption.",
+                "FTP does not provide modern encryption protection.",
+
 
                 "description":
                 "FTP service detected.",
+
 
                 "recommendation":
                 "Disable FTP and use SFTP."
 
             })
+
+
+
+
+        return {
+
+
+            "url":
+            response.url,
+
+
+            "ip":
+            ip,
+
+
+            "headers":
+            headers,
+
+
+            "ssl":
+            response.url.startswith(
+                "https"
+            ),
+
+
+            "ports":
+            ports,
+
+
+            "http_status":
+            response.status_code,
+
+
+            "response_time":
+            response_time,
+
+
+            "server":
+            headers.get(
+                "Server",
+                "Unknown"
+            ),
+
+
+            "technology":
+            headers.get(
+                "X-Powered-By",
+                "Not Disclosed"
+            ),
+
+
+            "cookies":
+            list(response.cookies),
+
+
+            "findings":
+            findings,
+
+
+            # Risk engine calculates this
+
+            "risk_score":
+            0,
+
+
+            "scan_status":
+            "Success"
+
+        }
+
+
+
+
+
+    except requests.exceptions.RequestException as e:
 
 
 
@@ -451,89 +607,85 @@ def scan_website(url):
             "url":
             url,
 
+
             "ip":
-            ip,
+            "Unknown",
+
 
             "headers":
-            headers,
+            {},
+
 
             "ssl":
-            response.url.startswith(
-                "https"
-            ),
+            False,
+
 
             "ports":
-            ports,
+            [],
+
 
             "http_status":
-            response.status_code,
+            "Unavailable",
+
 
             "response_time":
-            response_time,
+            0,
+
 
             "server":
-            headers.get(
-                "Server",
-                "Unknown"
-            ),
+            "Unknown",
+
 
             "technology":
-            headers.get(
-                "X-Powered-By",
-                "Not Disclosed"
-            ),
-
-            "cookies":
-            list(response.cookies),
-
-            "findings":
-            findings,
-
-            "risk_score":
-            len(findings) * 10,
-
-            "scan_status":
-            "Success"
-
-        }
+            "Unknown",
 
 
-
-    except requests.exceptions.RequestException:
-
-
-        return {
 
             "findings":[{
+
 
                 "title":
                 "Scan Failed",
 
+
+                "name":
+                "Scan Failed",
+
+
                 "severity":
                 "INFO",
+
 
                 "cvss":
                 0,
 
+
                 "simple_explanation":
                 "The website could not be checked.",
+
 
                 "business_impact":
                 "No security conclusion can be made until the website is reachable.",
 
+
                 "technical_explanation":
                 "The scanner could not establish a connection.",
 
+
                 "description":
-                "Website unreachable or invalid URL.",
+                str(e),
+
 
                 "recommendation":
                 "Verify the website address."
 
             }],
 
+
+
             "risk_score":
             0,
+
 
             "scan_status":
             "Failed"

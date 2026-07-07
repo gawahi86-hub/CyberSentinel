@@ -1,225 +1,287 @@
-def calculate_risk_score(issues):
+# ---------------------------------
+# CyberSentinel Risk Engine
+# Professional Security Risk Scoring
+# ---------------------------------
 
-    if not issues:
-        return 0
 
+# ---------------------------------
+# Calculate Weighted Risk Score
+# ---------------------------------
+
+def calculate_risk_score(findings):
 
     total_score = 0
 
 
-    for issue in issues:
+    severity_weights = {
 
-        cvss = issue.get(
-            "cvss",
-            issue.get(
-                "cvss_score",
-                0
-            )
-        )
+        "CRITICAL": 1.5,
 
+        "HIGH": 1.0,
 
-        try:
+        "MEDIUM": 0.5,
 
-            total_score += float(cvss)
+        "LOW": 0.2,
 
-        except:
-
-            pass
-
-
-
-    average = total_score / len(issues)
-
-
-    # Convert CVSS average to security score
-
-    security_score = round(
-        average * 10,
-        2
-    )
-
-
-    return security_score
-
-
-
-
-
-def classify_risk(score):
-
-
-    if score <= 20:
-
-        return (
-            "LOW",
-            "SAFE"
-        )
-
-
-    elif score <= 40:
-
-        return (
-            "LOW",
-            "MOSTLY SAFE"
-        )
-
-
-    elif score <= 60:
-
-        return (
-            "MEDIUM",
-            "MODERATE RISK"
-        )
-
-
-    elif score <= 80:
-
-        return (
-            "HIGH",
-            "HIGH RISK"
-        )
-
-
-    else:
-
-        return (
-            "CRITICAL",
-            "CRITICAL RISK"
-        )
-
-
-
-
-
-
-def analyze_security(
-        headers,
-        url,
-        ssl_status
-):
-
-
-    issues=[]
-
-
-
-    # Header analysis
-
-    security_headers={
-
-
-        "Content-Security-Policy":
-        {
-            "title":
-            "Missing Content Security Policy",
-
-            "cvss":
-            5.3,
-
-            "severity":
-            "Medium",
-
-            "recommendation":
-            "Implement Content-Security-Policy header."
-
-        },
-
-
-        "Strict-Transport-Security":
-        {
-
-            "title":
-            "Missing HSTS Header",
-
-            "cvss":
-            5.3,
-
-            "severity":
-            "Medium",
-
-            "recommendation":
-            "Enable Strict-Transport-Security."
-
-        },
-
-
-        "X-Frame-Options":
-        {
-
-            "title":
-            "Missing Clickjacking Protection",
-
-            "cvss":
-            4.7,
-
-            "severity":
-            "Medium",
-
-            "recommendation":
-            "Enable X-Frame-Options."
-
-        },
-
-
-        "X-Content-Type-Options":
-        {
-
-            "title":
-            "Missing MIME Protection",
-
-            "cvss":
-            4.7,
-
-            "severity":
-            "Medium",
-
-            "recommendation":
-            "Enable X-Content-Type-Options."
-
-        }
+        "INFO": 0
 
     }
 
 
 
-
-    for header,data in security_headers.items():
-
-
-        if header not in headers:
+    for finding in findings:
 
 
-            issues.append({
+        try:
 
-                "name":
-                data["title"],
+            cvss = float(
+                finding.get(
+                    "cvss",
+                    0
+                )
+            )
 
-                "description":
-                f"{header} security header is missing.",
 
-                "impact":
-                "This reduces browser-based security protection.",
+        except:
 
-                "fix":
-                data["recommendation"],
-
-                "cvss":
-                data["cvss"],
-
-                "severity":
-                data["severity"]
-
-            })
+            cvss = 0
 
 
 
+        severity = finding.get(
+            "severity",
+            "INFO"
+        ).upper()
 
-    score = calculate_risk_score(
-        issues
+
+
+        weight = severity_weights.get(
+            severity,
+            0
+        )
+
+
+
+        total_score += (
+            cvss * weight
+        )
+
+
+
+    # Maximum score
+
+    total_score = min(
+        total_score,
+        100
     )
 
 
-    level, verdict = classify_risk(
+
+    return round(
+        total_score,
+        1
+    )
+
+
+
+
+
+# ---------------------------------
+# Risk Classification
+# ---------------------------------
+
+def classify_risk(score):
+
+
+    if score <= 15:
+
+
+        return {
+
+            "level":
+            "LOW",
+
+
+            "verdict":
+            "SAFE",
+
+
+            "summary":
+            (
+                "The website demonstrates a strong "
+                "security posture. Only minor security "
+                "improvements were identified."
+            )
+
+        }
+
+
+
+
+    elif score <= 35:
+
+
+        return {
+
+
+            "level":
+            "LOW",
+
+
+            "verdict":
+            "MOSTLY SAFE",
+
+
+            "summary":
+            (
+                "The website is generally secure. "
+                "Some security hardening recommendations "
+                "are available to improve protection."
+            )
+
+        }
+
+
+
+
+
+    elif score <= 60:
+
+
+        return {
+
+
+            "level":
+            "MEDIUM",
+
+
+            "verdict":
+            "MODERATE RISK",
+
+
+            "summary":
+            (
+                "Security weaknesses were identified. "
+                "Recommended improvements should be "
+                "implemented."
+            )
+
+        }
+
+
+
+
+
+    elif score <= 85:
+
+
+        return {
+
+
+            "level":
+            "HIGH",
+
+
+            "verdict":
+            "HIGH RISK",
+
+
+            "summary":
+            (
+                "Multiple security issues were detected. "
+                "Immediate remediation is recommended."
+            )
+
+        }
+
+
+
+
+
+    else:
+
+
+        return {
+
+
+            "level":
+            "CRITICAL",
+
+
+            "verdict":
+            "CRITICAL RISK",
+
+
+            "summary":
+            (
+                "Critical security problems were detected. "
+                "Immediate security action is required."
+            )
+
+        }
+
+
+
+
+
+
+
+# ---------------------------------
+# Security Grade System
+# ---------------------------------
+
+def calculate_grade(score):
+
+
+    if score <= 15:
+
+        return "A"
+
+
+    elif score <= 35:
+
+        return "B"
+
+
+    elif score <= 60:
+
+        return "C"
+
+
+    elif score <= 85:
+
+        return "D"
+
+
+    else:
+
+        return "F"
+
+
+
+
+
+
+
+# ---------------------------------
+# Main Analysis Function
+# ---------------------------------
+
+def analyze_security(findings):
+
+
+    score = calculate_risk_score(
+        findings
+    )
+
+
+    risk = classify_risk(
+        score
+    )
+
+
+
+    grade = calculate_grade(
         score
     )
 
@@ -233,14 +295,22 @@ def analyze_security(
 
 
         "level":
-        level,
+        risk["level"],
 
 
         "verdict":
-        verdict,
+        risk["verdict"],
+
+
+        "summary":
+        risk["summary"],
+
+
+        "grade":
+        grade,
 
 
         "issues":
-        issues
+        findings
 
     }

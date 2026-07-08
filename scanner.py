@@ -12,10 +12,6 @@ from urllib.parse import urlparse
 from datetime import datetime
 
 
-# ---------------------------------
-# Common Ports
-# ---------------------------------
-
 COMMON_PORTS = {
     21: "FTP",
     22: "SSH",
@@ -39,15 +35,30 @@ def normalize_url(url):
     url = url.strip()
     url = url.replace(" ", "")
 
-    if not url.startswith(("http://", "https://")):
+    # Fix user typing mistakes
+    url = url.replace(
+        "w.w.w.",
+        "www."
+    )
+
+    url = url.replace(
+        "WWW.",
+        "www."
+    )
+
+
+    if not url.startswith(
+        ("http://", "https://")
+    ):
         url = "https://" + url
+
 
     return url
 
 
 
 # ---------------------------------
-# IP Resolution
+# Get IP Address
 # ---------------------------------
 
 def get_ip(domain):
@@ -61,14 +72,14 @@ def get_ip(domain):
 
 
 # ---------------------------------
-# SSL Certificate Scanner
+# SSL Certificate Check
 # ---------------------------------
 
 def check_ssl(domain):
 
-    result = {
+    ssl_data = {
 
-        "status": "Unknown",
+        "status": "Failed",
         "issuer": "Unknown",
         "expiry": "Unknown",
         "days_remaining": 0
@@ -93,37 +104,40 @@ def check_ssl(domain):
             ) as ssock:
 
 
-                certificate = ssock.getpeercert()
+                cert = ssock.getpeercert()
 
 
-                expiry = certificate["notAfter"]
-
-
-                expiry_date = datetime.strptime(
-                    expiry,
-                    "%b %d %H:%M:%S %Y %Z"
+                expiry = cert.get(
+                    "notAfter"
                 )
 
 
-                days = (
-                    expiry_date -
-                    datetime.utcnow()
-                ).days
+                if expiry:
+
+                    expiry_date = datetime.strptime(
+                        expiry,
+                        "%b %d %H:%M:%S %Y %Z"
+                    )
+
+
+                    ssl_data["expiry"] = str(
+                        expiry_date.date()
+                    )
+
+
+                    ssl_data["days_remaining"] = (
+                        expiry_date -
+                        datetime.utcnow()
+                    ).days
 
 
 
-                result["status"] = "Valid"
-
-                result["expiry"] = str(
-                    expiry_date.date()
-                )
-
-                result["days_remaining"] = days
+                ssl_data["status"] = "Valid"
 
 
-                result["issuer"] = dict(
+                ssl_data["issuer"] = dict(
                     x[0]
-                    for x in certificate["issuer"]
+                    for x in cert["issuer"]
                 ).get(
                     "organizationName",
                     "Unknown"
@@ -133,11 +147,12 @@ def check_ssl(domain):
 
     except:
 
-        result["status"] = "Invalid"
+        pass
 
 
 
-    return result
+    return ssl_data
+
 
 
 
@@ -147,11 +162,10 @@ def check_ssl(domain):
 
 def check_open_ports(domain):
 
-    ports = []
+    open_ports=[]
 
 
-    for port, service in COMMON_PORTS.items():
-
+    for port,service in COMMON_PORTS.items():
 
         try:
 
@@ -165,17 +179,17 @@ def check_open_ports(domain):
 
 
             result = sock.connect_ex(
-                (domain, port)
+                (domain,port)
             )
 
 
             if result == 0:
 
-                ports.append({
+                open_ports.append({
 
-                    "port": port,
+                    "port":port,
 
-                    "service": service
+                    "service":service
 
                 })
 
@@ -188,8 +202,8 @@ def check_open_ports(domain):
             pass
 
 
+    return open_ports
 
-    return ports
 
 
 
@@ -199,76 +213,54 @@ def check_open_ports(domain):
 
 def detect_technology(headers):
 
-    technologies = []
+    tech=[]
 
 
-    server = headers.get(
-        "Server",
-        ""
-    )
+    data = (
 
+        headers.get("Server","")
+        +
+        headers.get("X-Powered-By","")
 
-    powered = headers.get(
-        "X-Powered-By",
-        ""
-    )
-
-
-    combined = (
-        server +
-        " " +
-        powered
     ).lower()
 
 
 
-    technologies_map = {
+    technologies={
 
+        "nginx":"Nginx",
 
-        "nginx":
-        "Nginx",
+        "apache":"Apache",
 
+        "cloudflare":"Cloudflare",
 
-        "apache":
-        "Apache",
+        "php":"PHP",
 
+        "wordpress":"WordPress",
 
-        "cloudflare":
-        "Cloudflare",
-
-
-        "php":
-        "PHP",
-
-
-        "wordpress":
-        "WordPress",
-
-
-        "react":
-        "React"
-
+        "react":"React"
 
     }
 
 
 
-    for key,value in technologies_map.items():
+    for key,value in technologies.items():
 
-        if key in combined:
+        if key in data:
 
-            technologies.append(value)
+            tech.append(value)
 
 
 
-    if not technologies:
+    if not tech:
 
-        technologies.append(
+        tech.append(
             "Not Disclosed"
         )
 
 
-    return technologies
+    return tech
+
 
 
 
@@ -278,158 +270,92 @@ def detect_technology(headers):
 
 def analyze_headers(headers):
 
-    findings = []
+    findings=[]
 
 
-    security_headers = {
+    checks={
 
 
-        "Content-Security-Policy":{
-
-            "title":
+        "Content-Security-Policy":(
             "Missing Content Security Policy",
-
-            "severity":
             "Medium",
-
-            "cvss":
             5.3,
-
-            "owasp":
-            "A05:2021 Security Misconfiguration",
-
-            "fix":
-            "Implement Content-Security-Policy header."
-
-        },
+            "A05:2021 Security Misconfiguration"
+        ),
 
 
-        "Strict-Transport-Security":{
-
-            "title":
+        "Strict-Transport-Security":(
             "Missing HTTPS Security Policy",
-
-            "severity":
             "Medium",
-
-            "cvss":
             5.3,
-
-            "owasp":
-            "A02:2021 Cryptographic Failures",
-
-            "fix":
-            "Enable HSTS header."
-
-        },
+            "A02:2021 Cryptographic Failures"
+        ),
 
 
-        "X-Frame-Options":{
-
-            "title":
+        "X-Frame-Options":(
             "Missing Clickjacking Protection",
-
-            "severity":
             "Medium",
-
-            "cvss":
             4.7,
-
-            "owasp":
-            "A05:2021 Security Misconfiguration",
-
-            "fix":
-            "Enable X-Frame-Options."
-
-        },
+            "A05:2021 Security Misconfiguration"
+        ),
 
 
-        "X-Content-Type-Options":{
-
-            "title":
+        "X-Content-Type-Options":(
             "Missing MIME Protection",
-
-            "severity":
             "Low",
-
-            "cvss":
             3.1,
-
-            "owasp":
-            "A05:2021 Security Misconfiguration",
-
-            "fix":
-            "Enable X-Content-Type-Options."
-
-        },
+            "A05:2021 Security Misconfiguration"
+        ),
 
 
-        "Referrer-Policy":{
-
-            "title":
+        "Referrer-Policy":(
             "Missing Referrer Policy",
-
-            "severity":
             "Low",
-
-            "cvss":
             3.1,
-
-            "owasp":
-            "A05:2021 Security Misconfiguration",
-
-            "fix":
-            "Configure Referrer-Policy header."
-
-        }
-
+            "A05:2021 Security Misconfiguration"
+        )
 
     }
 
 
 
-    for header,data in security_headers.items():
+    for header,data in checks.items():
+
 
         if header not in headers:
 
 
             findings.append({
 
-                "title":
-                data["title"],
+                "title":data[0],
 
-                "name":
-                data["title"],
+                "name":data[0],
 
-                "severity":
-                data["severity"],
+                "severity":data[1],
 
-                "cvss":
-                data["cvss"],
+                "cvss":data[2],
 
-                "owasp":
-                data["owasp"],
+                "owasp":data[3],
 
-                "simple_explanation":
-                data["title"],
+                "simple_explanation":data[0],
 
                 "technical_explanation":
-                data["title"],
+                "Security header is missing.",
 
                 "description":
-                "Security header not detected.",
+                f"{header} header was not detected.",
 
                 "business_impact":
                 "May increase website attack surface.",
 
                 "recommendation":
-                data["fix"]
+                f"Enable {header} security header."
 
             })
 
 
-
     return findings
+
 
 
 
@@ -461,44 +387,11 @@ def analyze_cookies(cookies):
                 "cvss":
                 3.1,
 
-                "owasp":
-                "A05 Security Misconfiguration",
-
                 "description":
-                f"{cookie.name} does not use Secure flag.",
+                cookie.name,
 
                 "recommendation":
-                "Enable Secure cookie attribute."
-
-            })
-
-
-
-        if not cookie.has_nonstandard_attr("HttpOnly"):
-
-
-            findings.append({
-
-                "title":
-                "Cookie Missing HttpOnly Flag",
-
-                "name":
-                "Cookie Missing HttpOnly Flag",
-
-                "severity":
-                "Medium",
-
-                "cvss":
-                4.7,
-
-                "owasp":
-                "A07 Identification and Authentication Failures",
-
-                "description":
-                f"{cookie.name} may be accessible by scripts.",
-
-                "recommendation":
-                "Enable HttpOnly attribute."
+                "Enable Secure attribute."
 
             })
 
@@ -507,25 +400,27 @@ def analyze_cookies(cookies):
 
 
 
+
 # ---------------------------------
-# Main Scanner
+# Main Website Scanner
 # ---------------------------------
 
 def scan_website(url):
 
     try:
 
+
         url = normalize_url(url)
 
 
-        parsed = urlparse(url)
+        parsed=urlparse(url)
 
-        domain = parsed.netloc
+
+        domain=parsed.netloc
 
 
 
         start=time.time()
-
 
 
         response=requests.get(
@@ -546,7 +441,6 @@ def scan_website(url):
         )
 
 
-
         response_time=round(
 
             (time.time()-start)*1000,
@@ -560,6 +454,7 @@ def scan_website(url):
         headers=dict(
             response.headers
         )
+
 
 
         findings=[]
@@ -577,12 +472,6 @@ def scan_website(url):
         )
 
 
-        ports=check_open_ports(domain)
-
-
-        ssl_info=check_ssl(domain)
-
-
 
         return {
 
@@ -596,7 +485,7 @@ def scan_website(url):
 
 
             "ssl":
-            ssl_info,
+            check_ssl(domain),
 
 
             "headers":
@@ -604,7 +493,7 @@ def scan_website(url):
 
 
             "ports":
-            ports,
+            check_open_ports(domain),
 
 
             "technology":
@@ -637,7 +526,6 @@ def scan_website(url):
             "scan_status":
             "Success"
 
-
         }
 
 
@@ -658,10 +546,8 @@ def scan_website(url):
 
             "ssl":
             {
-
                 "status":
                 "Failed"
-
             },
 
 
@@ -669,10 +555,25 @@ def scan_website(url):
 
             "technology":[],
 
+            "server":
+            "Unknown",
+
+
+            "http_status":
+            "Unknown",
+
+
+            "response_time":
+            0,
+
+
             "findings":[{
 
 
                 "title":
+                "Scan Failed",
+
+                "name":
                 "Scan Failed",
 
                 "severity":
@@ -696,6 +597,5 @@ def scan_website(url):
 
             "scan_status":
             "Failed"
-
 
         }

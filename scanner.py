@@ -1,22 +1,144 @@
+# ---------------------------------
+# CyberSentinel v2.0
+# Professional Website Security Scanner
+# ---------------------------------
+
 import socket
+import ssl
 import requests
 import time
 
 from urllib.parse import urlparse
+from datetime import datetime
 
 
-COMMON_PORTS = [
-    21,
-    22,
-    25,
-    53,
-    80,
-    110,
-    143,
-    443,
-    3306,
-    8080
-]
+# ---------------------------------
+# Common Ports
+# ---------------------------------
+
+COMMON_PORTS = {
+    21: "FTP",
+    22: "SSH",
+    25: "SMTP",
+    53: "DNS",
+    80: "HTTP",
+    110: "POP3",
+    143: "IMAP",
+    443: "HTTPS",
+    3306: "MySQL",
+    8080: "HTTP-Proxy"
+}
+
+
+# ---------------------------------
+# URL Normalization
+# ---------------------------------
+
+def normalize_url(url):
+
+    url = url.strip()
+    url = url.replace(" ", "")
+
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+
+    return url
+
+
+
+# ---------------------------------
+# IP Resolution
+# ---------------------------------
+
+def get_ip(domain):
+
+    try:
+        return socket.gethostbyname(domain)
+
+    except:
+        return "Unknown"
+
+
+
+# ---------------------------------
+# SSL Certificate Scanner
+# ---------------------------------
+
+def check_ssl(domain):
+
+    result = {
+
+        "status": "Unknown",
+        "issuer": "Unknown",
+        "expiry": "Unknown",
+        "days_remaining": 0
+
+    }
+
+
+    try:
+
+        context = ssl.create_default_context()
+
+
+        with socket.create_connection(
+            (domain,443),
+            timeout=5
+        ) as sock:
+
+
+            with context.wrap_socket(
+                sock,
+                server_hostname=domain
+            ) as ssock:
+
+
+                certificate = ssock.getpeercert()
+
+
+                expiry = certificate["notAfter"]
+
+
+                expiry_date = datetime.strptime(
+                    expiry,
+                    "%b %d %H:%M:%S %Y %Z"
+                )
+
+
+                days = (
+                    expiry_date -
+                    datetime.utcnow()
+                ).days
+
+
+
+                result["status"] = "Valid"
+
+                result["expiry"] = str(
+                    expiry_date.date()
+                )
+
+                result["days_remaining"] = days
+
+
+                result["issuer"] = dict(
+                    x[0]
+                    for x in certificate["issuer"]
+                ).get(
+                    "organizationName",
+                    "Unknown"
+                )
+
+
+
+    except:
+
+        result["status"] = "Invalid"
+
+
+
+    return result
+
 
 
 # ---------------------------------
@@ -25,9 +147,11 @@ COMMON_PORTS = [
 
 def check_open_ports(domain):
 
-    open_ports = []
+    ports = []
 
-    for port in COMMON_PORTS:
+
+    for port, service in COMMON_PORTS.items():
+
 
         try:
 
@@ -36,14 +160,25 @@ def check_open_ports(domain):
                 socket.SOCK_STREAM
             )
 
+
             sock.settimeout(0.5)
+
 
             result = sock.connect_ex(
                 (domain, port)
             )
 
+
             if result == 0:
-                open_ports.append(port)
+
+                ports.append({
+
+                    "port": port,
+
+                    "service": service
+
+                })
+
 
             sock.close()
 
@@ -53,14 +188,92 @@ def check_open_ports(domain):
             pass
 
 
-    return open_ports
 
-
+    return ports
 
 
 
 # ---------------------------------
-# Security Header Analysis
+# Technology Detection
+# ---------------------------------
+
+def detect_technology(headers):
+
+    technologies = []
+
+
+    server = headers.get(
+        "Server",
+        ""
+    )
+
+
+    powered = headers.get(
+        "X-Powered-By",
+        ""
+    )
+
+
+    combined = (
+        server +
+        " " +
+        powered
+    ).lower()
+
+
+
+    technologies_map = {
+
+
+        "nginx":
+        "Nginx",
+
+
+        "apache":
+        "Apache",
+
+
+        "cloudflare":
+        "Cloudflare",
+
+
+        "php":
+        "PHP",
+
+
+        "wordpress":
+        "WordPress",
+
+
+        "react":
+        "React"
+
+
+    }
+
+
+
+    for key,value in technologies_map.items():
+
+        if key in combined:
+
+            technologies.append(value)
+
+
+
+    if not technologies:
+
+        technologies.append(
+            "Not Disclosed"
+        )
+
+
+    return technologies
+
+
+
+# ---------------------------------
+# Security Header Scanner
 # ---------------------------------
 
 def analyze_headers(headers):
@@ -71,122 +284,111 @@ def analyze_headers(headers):
     security_headers = {
 
 
-        "Content-Security-Policy": {
+        "Content-Security-Policy":{
 
             "title":
             "Missing Content Security Policy",
 
-            "cvss":
-            5.3,
-
             "severity":
             "Medium",
 
-            "simple":
-            "Your website is missing an extra browser security setting that helps block harmful scripts.",
+            "cvss":
+            5.3,
 
-            "impact":
-            "Attackers may have a higher chance of injecting unwanted scripts into website pages.",
-
-            "technical":
-            "Content-Security-Policy reduces the impact of Cross-Site Scripting attacks.",
+            "owasp":
+            "A05:2021 Security Misconfiguration",
 
             "fix":
-            "Implement Content-Security-Policy security header."
+            "Implement Content-Security-Policy header."
 
         },
 
 
-
-        "Strict-Transport-Security": {
-
+        "Strict-Transport-Security":{
 
             "title":
             "Missing HTTPS Security Policy",
 
-            "cvss":
-            5.3,
-
             "severity":
             "Medium",
 
-            "simple":
-            "Your website does not force browsers to always use secure HTTPS connections.",
+            "cvss":
+            5.3,
 
-            "impact":
-            "Users may be exposed to insecure connection downgrade attacks.",
-
-            "technical":
-            "HSTS instructs browsers to use HTTPS only.",
+            "owasp":
+            "A02:2021 Cryptographic Failures",
 
             "fix":
-            "Enable Strict-Transport-Security header."
+            "Enable HSTS header."
 
         },
 
 
-
-        "X-Frame-Options": {
-
+        "X-Frame-Options":{
 
             "title":
             "Missing Clickjacking Protection",
 
-            "cvss":
-            4.7,
-
             "severity":
             "Medium",
 
-            "simple":
-            "Your website has limited protection against being displayed inside another website.",
+            "cvss":
+            4.7,
 
-            "impact":
-            "Attackers may trick users into clicking hidden elements.",
-
-            "technical":
-            "X-Frame-Options prevents unauthorized iframe embedding.",
+            "owasp":
+            "A05:2021 Security Misconfiguration",
 
             "fix":
-            "Enable X-Frame-Options: DENY or SAMEORIGIN."
+            "Enable X-Frame-Options."
 
         },
 
 
-
-        "X-Content-Type-Options": {
-
+        "X-Content-Type-Options":{
 
             "title":
             "Missing MIME Protection",
 
-            "cvss":
-            4.7,
-
             "severity":
-            "Medium",
+            "Low",
 
-            "simple":
-            "Your website is missing browser file protection settings.",
+            "cvss":
+            3.1,
 
-            "impact":
-            "Some browser attacks may become easier.",
-
-            "technical":
-            "X-Content-Type-Options prevents MIME sniffing attacks.",
+            "owasp":
+            "A05:2021 Security Misconfiguration",
 
             "fix":
-            "Enable X-Content-Type-Options header."
+            "Enable X-Content-Type-Options."
+
+        },
+
+
+        "Referrer-Policy":{
+
+            "title":
+            "Missing Referrer Policy",
+
+            "severity":
+            "Low",
+
+            "cvss":
+            3.1,
+
+            "owasp":
+            "A05:2021 Security Misconfiguration",
+
+            "fix":
+            "Configure Referrer-Policy header."
 
         }
+
 
     }
 
 
 
-
     for header,data in security_headers.items():
-
 
         if header not in headers:
 
@@ -196,34 +398,29 @@ def analyze_headers(headers):
                 "title":
                 data["title"],
 
-
                 "name":
                 data["title"],
-
 
                 "severity":
                 data["severity"],
 
-
                 "cvss":
                 data["cvss"],
 
+                "owasp":
+                data["owasp"],
 
                 "simple_explanation":
-                data["simple"],
-
-
-                "business_impact":
-                data["impact"],
-
+                data["title"],
 
                 "technical_explanation":
-                data["technical"],
-
+                data["title"],
 
                 "description":
-                data["technical"],
+                "Security header not detected.",
 
+                "business_impact":
+                "May increase website attack surface.",
 
                 "recommendation":
                 data["fix"]
@@ -231,15 +428,13 @@ def analyze_headers(headers):
             })
 
 
+
     return findings
 
 
 
-
-
-
 # ---------------------------------
-# Cookie Analysis
+# Cookie Scanner
 # ---------------------------------
 
 def analyze_cookies(cookies):
@@ -251,7 +446,6 @@ def analyze_cookies(cookies):
 
 
         if not cookie.secure:
-
 
             findings.append({
 
@@ -267,22 +461,11 @@ def analyze_cookies(cookies):
                 "cvss":
                 3.1,
 
-
-                "simple_explanation":
-                "A website cookie is not marked as secure.",
-
-
-                "business_impact":
-                "Session information may have increased exposure risk.",
-
-
-                "technical_explanation":
-                "Cookies without Secure attribute may be transmitted insecurely.",
-
+                "owasp":
+                "A05 Security Misconfiguration",
 
                 "description":
-                f"Cookie {cookie.name} is not secured.",
-
+                f"{cookie.name} does not use Secure flag.",
 
                 "recommendation":
                 "Enable Secure cookie attribute."
@@ -291,7 +474,7 @@ def analyze_cookies(cookies):
 
 
 
-        if "httponly" not in cookie._rest:
+        if not cookie.has_nonstandard_attr("HttpOnly"):
 
 
             findings.append({
@@ -308,78 +491,19 @@ def analyze_cookies(cookies):
                 "cvss":
                 4.7,
 
-
-                "simple_explanation":
-                "A browser script may be able to access this cookie.",
-
-
-                "business_impact":
-                "This can increase the impact of browser attacks.",
-
-
-                "technical_explanation":
-                "HttpOnly prevents JavaScript access to sensitive cookies.",
-
+                "owasp":
+                "A07 Identification and Authentication Failures",
 
                 "description":
-                f"Cookie {cookie.name} may be accessible through scripts.",
-
+                f"{cookie.name} may be accessible by scripts.",
 
                 "recommendation":
-                "Enable HttpOnly flag."
+                "Enable HttpOnly attribute."
 
             })
 
 
     return findings
-
-
-
-
-
-# ---------------------------------
-# URL Normalization
-# ---------------------------------
-
-def normalize_url(url):
-
-
-    url=url.strip()
-
-
-    url=url.replace(
-        " ",
-        ""
-    )
-
-
-
-    clean=url.replace(
-        "https://",
-        ""
-    ).replace(
-        "http://",
-        ""
-    )
-
-
-
-    if clean.startswith(
-        "w.w.w."
-    ):
-
-        clean=clean.replace(
-            "w.w.w.",
-            "www.",
-            1
-        )
-
-
-
-    return "https://" + clean
-
-
-
 
 
 
@@ -389,17 +513,14 @@ def normalize_url(url):
 
 def scan_website(url):
 
-
     try:
 
-
-        url=normalize_url(url)
-
-
-        parsed=urlparse(url)
+        url = normalize_url(url)
 
 
-        domain=parsed.netloc
+        parsed = urlparse(url)
+
+        domain = parsed.netloc
 
 
 
@@ -436,94 +557,30 @@ def scan_website(url):
 
 
 
-        try:
-
-            ip=socket.gethostbyname(domain)
-
-
-        except:
-
-            ip="Unknown"
-
-
-
-
         headers=dict(
             response.headers
         )
 
 
-
         findings=[]
 
 
-
         findings.extend(
-
             analyze_headers(headers)
-
         )
 
 
-
         findings.extend(
-
             analyze_cookies(
                 response.cookies
             )
-
         )
 
 
+        ports=check_open_ports(domain)
 
 
-        ports=check_open_ports(
-            domain
-        )
-
-
-
-
-
-        if 21 in ports:
-
-
-            findings.append({
-
-                "title":
-                "FTP Port Open",
-
-                "name":
-                "FTP Port Open",
-
-                "severity":
-                "High",
-
-                "cvss":
-                7.5,
-
-
-                "simple_explanation":
-                "An old file transfer service is publicly available.",
-
-
-                "business_impact":
-                "Attackers may attempt unauthorized access.",
-
-
-                "technical_explanation":
-                "FTP does not provide modern encryption protection.",
-
-
-                "description":
-                "FTP service detected.",
-
-
-                "recommendation":
-                "Disable FTP and use SFTP."
-
-            })
-
+        ssl_info=check_ssl(domain)
 
 
 
@@ -535,21 +592,30 @@ def scan_website(url):
 
 
             "ip":
-            ip,
+            get_ip(domain),
+
+
+            "ssl":
+            ssl_info,
 
 
             "headers":
             headers,
 
 
-            "ssl":
-            response.url.startswith(
-                "https"
-            ),
-
-
             "ports":
             ports,
+
+
+            "technology":
+            detect_technology(headers),
+
+
+            "server":
+            headers.get(
+                "Server",
+                "Unknown"
+            ),
 
 
             "http_status":
@@ -560,29 +626,9 @@ def scan_website(url):
             response_time,
 
 
-            "server":
-            headers.get(
-                "Server",
-                "Unknown"
-            ),
-
-
-            "technology":
-            headers.get(
-                "X-Powered-By",
-                "Not Disclosed"
-            ),
-
-
-            "cookies":
-            list(response.cookies),
-
-
             "findings":
             findings,
 
-
-            # Risk engine calculates this
 
             "risk_score":
             0,
@@ -591,14 +637,12 @@ def scan_website(url):
             "scan_status":
             "Success"
 
+
         }
 
 
 
-
-
-    except requests.exceptions.RequestException as e:
-
+    except Exception as e:
 
 
         return {
@@ -612,34 +656,18 @@ def scan_website(url):
             "Unknown",
 
 
-            "headers":
-            {},
-
-
             "ssl":
-            False,
+            {
+
+                "status":
+                "Failed"
+
+            },
 
 
-            "ports":
-            [],
+            "ports":[],
 
-
-            "http_status":
-            "Unavailable",
-
-
-            "response_time":
-            0,
-
-
-            "server":
-            "Unknown",
-
-
-            "technology":
-            "Unknown",
-
-
+            "technology":[],
 
             "findings":[{
 
@@ -647,40 +675,19 @@ def scan_website(url):
                 "title":
                 "Scan Failed",
 
-
-                "name":
-                "Scan Failed",
-
-
                 "severity":
                 "INFO",
-
 
                 "cvss":
                 0,
 
-
-                "simple_explanation":
-                "The website could not be checked.",
-
-
-                "business_impact":
-                "No security conclusion can be made until the website is reachable.",
-
-
-                "technical_explanation":
-                "The scanner could not establish a connection.",
-
-
                 "description":
                 str(e),
 
-
                 "recommendation":
-                "Verify the website address."
+                "Check website URL."
 
             }],
-
 
 
             "risk_score":
@@ -689,5 +696,6 @@ def scan_website(url):
 
             "scan_status":
             "Failed"
+
 
         }

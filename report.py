@@ -1,6 +1,6 @@
 # ---------------------------------
-# CyberSentinel v2.0
-# Professional SOC PDF Report Generator
+# CyberSentinel v2.1
+# Professional Security Report Generator
 # ---------------------------------
 
 import os
@@ -12,8 +12,7 @@ from reportlab.platypus import (
     Paragraph,
     Spacer,
     Table,
-    TableStyle,
-    Image
+    TableStyle
 )
 
 from reportlab.lib.styles import (
@@ -22,7 +21,9 @@ from reportlab.lib.styles import (
 )
 
 from reportlab.lib.pagesizes import A4
+
 from reportlab.lib import colors
+
 
 
 
@@ -32,69 +33,47 @@ from reportlab.lib import colors
 
 def generate_ai_recommendations(data):
 
-    recommendations = []
+    recommendations=[]
 
 
-    score = data.get(
+    score=data.get(
         "risk_score",
         0
-    )
-
-
-    issues = data.get(
-        "issues",
-        []
     )
 
 
     if score <= 20:
 
         recommendations.append(
-            "Maintain current security controls and perform regular vulnerability monitoring."
-        )
-
-        recommendations.append(
-            "Continue periodic security assessments."
+            "Maintain current security controls and perform regular vulnerability assessments."
         )
 
 
     elif score <= 50:
 
         recommendations.append(
-            "Review and remediate identified security weaknesses."
-        )
-
-        recommendations.append(
-            "Improve security headers and website configuration."
+            "Review identified weaknesses and improve website security configuration."
         )
 
 
     elif score <= 80:
 
         recommendations.append(
-            "Immediate remediation is recommended for detected vulnerabilities."
-        )
-
-        recommendations.append(
-            "Perform penetration testing and configuration review."
+            "Prioritize remediation of detected vulnerabilities."
         )
 
 
     else:
 
         recommendations.append(
-            "Critical vulnerabilities require immediate security action."
-        )
-
-        recommendations.append(
-            "Conduct complete security audit and incident response review."
+            "Immediate security review and incident response actions are recommended."
         )
 
 
 
-    for issue in issues:
+    for issue in data.get("issues",[]):
 
-        name = issue.get(
+        name=issue.get(
             "name",
             ""
         ).lower()
@@ -103,7 +82,7 @@ def generate_ai_recommendations(data):
         if "cookie" in name:
 
             recommendations.append(
-                "Secure cookies using Secure, HttpOnly and SameSite attributes."
+                "Enable Secure, HttpOnly and SameSite cookie attributes."
             )
 
 
@@ -114,21 +93,24 @@ def generate_ai_recommendations(data):
             )
 
 
-        if "https" in name or "ssl" in name:
+        if "https" in name:
 
             recommendations.append(
-                "Maintain strong TLS configuration and HTTPS enforcement."
+                "Enforce HTTPS and enable HSTS security policy."
             )
 
 
         if "port" in name:
 
             recommendations.append(
-                "Close unnecessary exposed network services."
+                "Disable unnecessary exposed network services."
             )
 
 
+
     return list(set(recommendations))
+
+
 
 
 
@@ -139,31 +121,31 @@ def generate_ai_recommendations(data):
 def generate_pdf(data):
 
 
-    base_dir = os.path.dirname(
+    base_dir=os.path.dirname(
         os.path.abspath(__file__)
     )
 
 
-    reports_folder = os.path.join(
+    reports=os.path.join(
         base_dir,
         "reports"
     )
 
 
     os.makedirs(
-        reports_folder,
+        reports,
         exist_ok=True
     )
 
 
-    file_path = os.path.join(
-        reports_folder,
+    file_path=os.path.join(
+        reports,
         "security_report.pdf"
     )
 
 
 
-    doc = SimpleDocTemplate(
+    doc=SimpleDocTemplate(
 
         file_path,
 
@@ -181,81 +163,61 @@ def generate_pdf(data):
 
 
 
-    styles = getSampleStyleSheet()
+    styles=getSampleStyleSheet()
 
 
 
-    title_style = ParagraphStyle(
+    title_style=ParagraphStyle(
 
         "title",
 
         parent=styles["Title"],
 
-        fontSize=26,
-
         alignment=1,
 
-        textColor=colors.HexColor("#0b5394")
+        fontSize=26,
+
+        textColor=colors.HexColor(
+            "#1d4ed8"
+        )
 
     )
 
 
 
-    heading_style = ParagraphStyle(
+    heading_style=ParagraphStyle(
 
         "heading",
 
         parent=styles["Heading2"],
 
-        textColor=colors.HexColor("#1e3a8a")
+        textColor=colors.HexColor(
+            "#1e40af"
+        )
 
     )
 
 
 
-    normal = styles["Normal"]
+    normal=styles["Normal"]
 
 
 
-    elements = []
+    elements=[]
 
 
 
-    # ---------------------------------
+
     # COVER PAGE
-    # ---------------------------------
-
-    logo_path = os.path.join(
-
-        base_dir,
-
-        "static",
-
-        "logo.png"
-
-    )
-
-
-    if os.path.exists(logo_path):
-
-        elements.append(
-            Image(
-                logo_path,
-                width=100,
-                height=100
-            )
-        )
-
-        elements.append(
-            Spacer(1,20)
-        )
-
 
     elements.append(
 
         Paragraph(
+
             "🛡 CYBERSENTINEL",
+
             title_style
+
         )
 
     )
@@ -284,12 +246,16 @@ def generate_pdf(data):
     )
 
 
+
     elements.append(
 
         Paragraph(
 
             "Generated: " +
-            str(datetime.now()),
+
+            datetime.now().strftime(
+                "%d %B %Y %H:%M:%S"
+            ),
 
             normal
 
@@ -299,34 +265,127 @@ def generate_pdf(data):
 
 
     elements.append(
-        Spacer(1,30)
+        Spacer(1,20)
     )
 
 
 
-    # ---------------------------------
-    # EXECUTIVE SUMMARY
-    # ---------------------------------
+
+
+    # SCAN INFORMATION
 
     elements.append(
 
         Paragraph(
-            "Executive Summary",
+
+            "Scan Information",
+
             heading_style
+
         )
 
     )
 
 
-    summary_table = Table([
+
+    scan_info=[
 
         [
 
-            "Verdict",
+            "Scanner Version",
 
             data.get(
-                "safety_verdict",
-                ""
+                "scanner_version",
+                "CyberSentinel v2.1"
+            )
+
+        ],
+
+        [
+
+            "Scan Date",
+
+            data.get(
+                "scan_time",
+                "Unknown"
+            )
+
+        ],
+
+        [
+
+            "Status",
+
+            data.get(
+                "scan_status",
+                "Completed"
+            )
+
+        ]
+
+    ]
+
+
+
+    table=Table(scan_info)
+
+
+    table.setStyle(
+
+        TableStyle([
+
+            (
+                "GRID",
+                (0,0),
+                (-1,-1),
+                0.5,
+                colors.grey
+            )
+
+        ])
+
+    )
+
+
+    elements.append(table)
+
+
+
+    elements.append(
+        Spacer(1,20)
+    )
+
+
+
+
+
+
+    # EXECUTIVE SUMMARY
+
+    elements.append(
+
+        Paragraph(
+
+            "Executive Summary",
+
+            heading_style
+
+        )
+
+    )
+
+
+
+    summary=[
+
+        [
+            "Risk Score",
+
+            str(
+                data.get(
+                    "risk_score",
+                    0
+                )
             )
 
         ],
@@ -344,19 +403,21 @@ def generate_pdf(data):
 
         [
 
-            "Risk Score",
+            "Verdict",
 
-            str(
-                data.get(
-                    "risk_score",
-                    0
-                )
+            data.get(
+                "safety_verdict",
+                ""
             )
 
         ]
 
+    ]
 
-    ])
+
+
+    summary_table=Table(summary)
+
 
 
     summary_table.setStyle(
@@ -381,9 +442,11 @@ def generate_pdf(data):
     )
 
 
+
     elements.append(
         Spacer(1,15)
     )
+
 
 
     elements.append(
@@ -403,199 +466,87 @@ def generate_pdf(data):
 
 
 
+
+
     elements.append(
         Spacer(1,20)
     )
 
 
 
-    # ---------------------------------
+
+
+
     # TECHNICAL INFORMATION
-    # ---------------------------------
 
     elements.append(
 
         Paragraph(
+
             "Technical Information",
+
             heading_style
+
         )
 
     )
 
 
-    ssl_data = data.get(
-        "ssl",
-        {}
-    )
 
+    technical=[
 
-    ssl_text = (
-
-        "Status: "
-        + str(ssl_data.get("status","Unknown"))
-        +
-        "<br/>Issuer: "
-        + str(ssl_data.get("issuer","Unknown"))
-        +
-        "<br/>Expiry: "
-        + str(ssl_data.get("expiry","Unknown"))
-        +
-        "<br/>Days Remaining: "
-        + str(ssl_data.get("days_remaining","0"))
-
-    )
-
-
-
-    technology = data.get(
-        "technology",
-        ""
-    )
-
-
-    if isinstance(
-        technology,
-        list
-    ):
-
-        technology=", ".join(
-            technology
-        )
-
-
-
-    technical_table = Table([
 
         [
             "Website",
             data.get("url","")
         ],
 
+
         [
             "IP Address",
             str(data.get("ip",""))
         ],
+
 
         [
             "HTTP Status",
             str(data.get("http_status",""))
         ],
 
+
         [
-            "SSL Certificate",
-            ssl_text
+            "SSL",
+            str(data.get("ssl",""))
         ],
+
 
         [
             "Server",
-            data.get("server","")
+            str(data.get("server",""))
         ],
+
 
         [
             "Technology",
-            technology
+            str(data.get("technology",""))
         ],
+
 
         [
             "Response Time",
             str(data.get("response_time",""))+" ms"
         ]
 
-    ])
-
-
-
-    technical_table.setStyle(
-
-        TableStyle([
-
-            (
-                "GRID",
-                (0,0),
-                (-1,-1),
-                0.5,
-                colors.grey
-            )
-
-        ])
-
-    )
-
-
-    elements.append(
-        technical_table
-    )
-
-
-    elements.append(
-        Spacer(1,20)
-    )
-
-
-
-    # ---------------------------------
-    # OPEN PORTS
-    # ---------------------------------
-
-    elements.append(
-
-        Paragraph(
-            "Open Ports Analysis",
-            heading_style
-        )
-
-    )
-
-
-    ports=data.get(
-        "ports",
-        []
-    )
-
-
-    port_table=[
-
-        [
-            "Port",
-            "Service"
-        ]
-
     ]
 
 
-    for port in ports:
 
-        port_table.append(
-
-            [
-
-                str(port.get("port")),
-
-                port.get("service")
-
-            ]
-
-        )
-
-
-
-    if len(port_table)==1:
-
-        port_table.append(
-            [
-                "None",
-                "No open ports detected"
-            ]
-        )
-
-
-
-    ports_table=Table(
-        port_table
+    tech_table=Table(
+        technical
     )
 
 
-    ports_table.setStyle(
+    tech_table.setStyle(
 
         TableStyle([
 
@@ -612,8 +563,9 @@ def generate_pdf(data):
     )
 
 
+
     elements.append(
-        ports_table
+        tech_table
     )
 
 
@@ -623,9 +575,9 @@ def generate_pdf(data):
 
 
 
-    # ---------------------------------
+
+
     # VULNERABILITIES
-    # ---------------------------------
 
     elements.append(
 
@@ -648,97 +600,180 @@ def generate_pdf(data):
 
 
 
-    vulnerability_table=[
+    if issues:
 
-        [
 
-            "Issue",
+        vuln=[
 
-            "Severity",
+            [
 
-            "CVSS",
+                "Issue",
+                "OWASP",
+                "CVSS",
+                "Severity"
 
-            "OWASP",
-
-            "Recommendation"
+            ]
 
         ]
 
-    ]
 
 
-
-    for issue in issues:
-
-
-        vulnerability_table.append(
-
-            [
-
-                issue.get("name",""),
-
-                issue.get("severity",""),
-
-                str(issue.get("cvss",0)),
-
-                issue.get("owasp",""),
-
-                issue.get("recommendation","")
-
-            ]
-
-        )
+        for issue in issues:
 
 
+            vuln.append(
 
-    if len(vulnerability_table)==1:
+                [
 
-        vulnerability_table.append(
+                    issue.get(
+                        "name",
+                        ""
+                    ),
 
-            [
+                    issue.get(
+                        "owasp",
+                        "Security Misconfiguration"
+                    ),
 
-                "No vulnerabilities",
-
-                "-",
-
-                "0",
-
-                "-",
-
-                "Maintain security"
-
-            ]
-
-        )
-
-
-
-    vuln_table=Table(
-        vulnerability_table,
-        repeatRows=1
-    )
+                    str(
+                        issue.get(
+                            "cvss",
+                            0
+                        )
+                    ),
 
 
-    vuln_table.setStyle(
+                    issue.get(
+                        "severity",
+                        ""
+                    )
 
-        TableStyle([
+                ]
 
-            (
-                "GRID",
-                (0,0),
-                (-1,-1),
-                0.5,
-                colors.grey
             )
 
-        ])
-
-    )
 
 
-    elements.append(
-        vuln_table
-    )
+        vuln_table=Table(
+            vuln,
+            repeatRows=1
+        )
+
+
+        vuln_table.setStyle(
+
+            TableStyle([
+
+                (
+                    "GRID",
+                    (0,0),
+                    (-1,-1),
+                    0.5,
+                    colors.grey
+                )
+
+            ])
+
+        )
+
+
+        elements.append(
+            vuln_table
+        )
+
+
+
+        elements.append(
+            Spacer(1,15)
+        )
+
+
+
+
+        for issue in issues:
+
+
+            elements.append(
+
+                Paragraph(
+
+                    "<b>Finding:</b> " +
+
+                    issue.get(
+                        "name",
+                        ""
+                    ),
+
+                    normal
+
+                )
+
+            )
+
+
+            elements.append(
+
+                Paragraph(
+
+                    "<b>Affected Component:</b> " +
+
+                    issue.get(
+                        "affected_component",
+                        "Website Security"
+                    ),
+
+                    normal
+
+                )
+
+            )
+
+
+
+            elements.append(
+
+                Paragraph(
+
+                    "<b>Impact:</b> " +
+
+                    issue.get(
+                        "impact",
+                        ""
+                    ),
+
+                    normal
+
+                )
+
+            )
+
+
+
+            elements.append(
+                Spacer(1,10)
+            )
+
+
+
+    else:
+
+
+        elements.append(
+
+            Paragraph(
+
+                "No vulnerabilities detected.",
+
+                normal
+
+            )
+
+        )
+
+
+
+
+
 
 
     elements.append(
@@ -747,9 +782,9 @@ def generate_pdf(data):
 
 
 
-    # ---------------------------------
-    # RECOMMENDATIONS
-    # ---------------------------------
+
+
+    # AI RECOMMENDATIONS
 
     elements.append(
 
@@ -764,13 +799,15 @@ def generate_pdf(data):
     )
 
 
-    for recommendation in generate_ai_recommendations(data):
+
+    for rec in generate_ai_recommendations(data):
+
 
         elements.append(
 
             Paragraph(
 
-                "• "+recommendation,
+                "• " + rec,
 
                 normal
 
@@ -779,9 +816,13 @@ def generate_pdf(data):
         )
 
 
+
+
+
     elements.append(
         Spacer(1,20)
     )
+
 
 
     elements.append(

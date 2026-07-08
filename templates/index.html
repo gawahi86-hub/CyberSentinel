@@ -12,255 +12,302 @@ CyberSentinel SOC Dashboard
 
 <style>
 
-body {
-    margin:0;
-    font-family:Arial,sans-serif;
-    background:#0b0f19;
-    color:white;
-}
+body{
 
-
-.header {
-
-    background:#111827;
-    padding:25px;
-    text-align:center;
-    font-size:28px;
-    font-weight:bold;
-    border-bottom:2px solid #1f2937;
+margin:0;
+font-family:Arial,Helvetica,sans-serif;
+background:#080d18;
+color:white;
 
 }
 
 
-.container {
+.header{
 
-    width:85%;
-    margin:auto;
-    padding:25px;
+background:#111827;
+padding:25px;
+text-align:center;
+font-size:30px;
+font-weight:bold;
+border-bottom:2px solid #1e40af;
 
 }
 
 
 
-.scan-box {
+.container{
 
-    background:#111827;
-    padding:25px;
-    border-radius:12px;
-
-}
-
-
-
-input {
-
-    width:70%;
-    padding:14px;
-    border:none;
-    border-radius:6px;
+width:90%;
+margin:auto;
+padding:30px;
 
 }
 
 
 
-button {
+.scan-box{
 
-    padding:14px 25px;
-    background:#2563eb;
-    color:white;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
+background:#111827;
+padding:25px;
+border-radius:15px;
 
 }
 
 
 
-button:hover {
+input{
 
-    background:#1d4ed8;
-
-}
-
-
-
-.cards {
-
-    display:flex;
-    gap:20px;
-    margin-top:25px;
+width:70%;
+padding:15px;
+border-radius:8px;
+border:none;
+font-size:16px;
 
 }
 
 
 
-.card {
+button{
 
-    flex:1;
-    padding:25px;
-    border-radius:12px;
-    text-align:center;
-    font-size:18px;
-    font-weight:bold;
-
-}
-
-
-
-.safe {
-    background:#15803d;
-}
-
-
-.medium {
-    background:#d97706;
-}
-
-
-.high {
-    background:#dc2626;
-}
-
-
-.critical {
-    background:#7f1d1d;
-}
-
-
-
-
-.section {
-
-    background:#111827;
-    margin-top:25px;
-    padding:25px;
-    border-radius:12px;
+padding:15px 25px;
+background:#2563eb;
+border:none;
+border-radius:8px;
+color:white;
+font-weight:bold;
+cursor:pointer;
 
 }
 
 
 
+button:hover{
 
-.info-grid {
-
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:15px;
+background:#1d4ed8;
 
 }
 
 
 
-.info {
+.cards{
 
-    background:#1f2937;
-    padding:15px;
-    border-radius:8px;
-
-}
-
-
-
-ul {
-
-    padding:0;
-    list-style:none;
+display:flex;
+gap:20px;
+margin-top:25px;
 
 }
 
 
 
-li {
+.card{
 
-    background:#1f2937;
-    padding:20px;
-    margin-bottom:15px;
-    border-radius:10px;
-
-}
-
-
-
-.explain {
-
-    background:#0f172a;
-    padding:15px;
-    border-radius:8px;
-    margin-top:15px;
+flex:1;
+padding:25px;
+border-radius:15px;
+text-align:center;
+font-size:20px;
+font-weight:bold;
 
 }
 
 
 
-.label {
+.safe{
 
-    color:#60a5fa;
-    font-weight:bold;
+background:#15803d;
+
+}
+
+
+.medium{
+
+background:#d97706;
+
+}
+
+
+.high{
+
+background:#dc2626;
+
+}
+
+
+.critical{
+
+background:#7f1d1d;
 
 }
 
 
 
-.badge {
+.section{
 
-    padding:5px 12px;
-    border-radius:20px;
-    font-size:12px;
-    font-weight:bold;
-
-}
-
-
-
-.low {
-    background:#16a34a;
-}
-
-
-.med {
-    background:#f59e0b;
-}
-
-
-.highb {
-    background:#dc2626;
-}
-
-
-.criticalb {
-    background:#7f1d1d;
-}
-
-
-
-.small {
-
-    color:#cbd5e1;
-    font-size:14px;
+background:#111827;
+margin-top:25px;
+padding:25px;
+border-radius:15px;
 
 }
 
 
 
-.download {
+.info-grid{
 
-    color:#60a5fa;
-    font-size:18px;
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:15px;
 
 }
 
 
 
-.empty {
+.info{
 
-    text-align:center;
-    color:#94a3b8;
+background:#1f2937;
+padding:18px;
+border-radius:10px;
+
+}
+
+
+
+.title{
+
+color:#60a5fa;
+font-weight:bold;
+
+}
+
+
+
+.ssl-box{
+
+background:#064e3b;
+padding:15px;
+border-radius:10px;
+
+}
+
+
+
+.port{
+
+background:#1e293b;
+padding:8px;
+margin:5px;
+border-radius:6px;
+display:inline-block;
+
+}
+
+
+
+.tech{
+
+background:#312e81;
+padding:8px;
+margin:5px;
+border-radius:6px;
+display:inline-block;
+
+}
+
+
+
+.issue{
+
+background:#1f2937;
+padding:20px;
+margin-bottom:20px;
+border-radius:12px;
+
+}
+
+
+
+.explain{
+
+background:#0f172a;
+padding:15px;
+border-radius:10px;
+margin-top:15px;
+
+}
+
+
+
+.badge{
+
+padding:6px 15px;
+border-radius:20px;
+font-size:13px;
+font-weight:bold;
+
+}
+
+
+
+.low{
+
+background:#16a34a;
+
+}
+
+
+.med{
+
+background:#f59e0b;
+
+}
+
+
+.highb{
+
+background:#dc2626;
+
+}
+
+
+.criticalb{
+
+background:#7f1d1d;
+
+}
+
+
+
+.download{
+
+display:block;
+text-align:center;
+font-size:20px;
+color:#60a5fa;
+text-decoration:none;
+
+}
+
+
+
+.small{
+
+color:#cbd5e1;
+
+}
+
+
+
+.empty{
+
+text-align:center;
+color:#94a3b8;
 
 }
 
 
 
 </style>
+
 
 </head>
 
@@ -276,7 +323,6 @@ li {
 
 
 
-
 <div class="container">
 
 
@@ -286,9 +332,13 @@ li {
 
 <form method="POST">
 
+
 <input
+
 type="text"
+
 name="url"
+
 placeholder="Enter website URL">
 
 
@@ -307,26 +357,31 @@ Run Security Scan
 
 
 
-
 {% if result %}
+
 
 
 
 <div class="cards">
 
 
+
 <div class="card
 
 {% if result.risk_level == 'LOW' %}
+
 safe
 
 {% elif result.risk_level == 'MEDIUM' %}
+
 medium
 
 {% elif result.risk_level == 'HIGH' %}
+
 high
 
 {% else %}
+
 critical
 
 {% endif %}
@@ -344,20 +399,22 @@ Risk Score
 
 
 
-
-
 <div class="card
 
 {% if result.risk_level == 'LOW' %}
+
 safe
 
 {% elif result.risk_level == 'MEDIUM' %}
+
 medium
 
 {% elif result.risk_level == 'HIGH' %}
+
 high
 
 {% else %}
+
 critical
 
 {% endif %}
@@ -376,8 +433,19 @@ Risk Level
 
 
 
+<div class="card
 
-<div class="card high">
+{% if result.safety_verdict == 'SAFE' %}
+
+safe
+
+{% else %}
+
+high
+
+{% endif %}
+
+">
 
 
 Verdict
@@ -389,9 +457,7 @@ Verdict
 </div>
 
 
-
 </div>
-
 
 
 
@@ -400,9 +466,12 @@ Verdict
 
 <div class="section">
 
-<h3>
-Executive Summary
-</h3>
+
+<h2>
+
+📊 Executive Summary
+
+</h2>
 
 
 <p>
@@ -420,67 +489,240 @@ Executive Summary
 
 
 
-
 <div class="section">
 
-<h3>
-Technical Information
-</h3>
+
+<h2>
+
+⚙ Technical Information
+
+</h2>
+
 
 
 <div class="info-grid">
 
 
+
 <div class="info">
-<b>Website</b><br>
+
+<span class="title">
+
+Website
+
+</span>
+
+<br>
+
 {{result.url}}
+
 </div>
 
 
+
+
 <div class="info">
-<b>IP Address</b><br>
+
+<span class="title">
+
+IP Address
+
+</span>
+
+<br>
+
 {{result.ip}}
+
 </div>
 
 
+
+
 <div class="info">
-<b>HTTP Status</b><br>
+
+<span class="title">
+
+HTTP Status
+
+</span>
+
+<br>
+
 {{result.http_status}}
+
 </div>
 
 
-<div class="info">
-<b>SSL Enabled</b><br>
-{{result.ssl}}
-</div>
 
 
 <div class="info">
-<b>Server</b><br>
+
+<span class="title">
+
+Server
+
+</span>
+
+<br>
+
 {{result.server}}
+
 </div>
 
 
+
+
+
+
 <div class="info">
-<b>Technology</b><br>
-{{result.technology}}
+
+
+<span class="title">
+
+SSL Certificate
+
+</span>
+
+
+<br><br>
+
+
+<div class="ssl-box">
+
+
+Status:
+
+{{result.ssl.status}}
+
+
+<br>
+
+
+Issuer:
+
+{{result.ssl.issuer}}
+
+
+<br>
+
+
+Expiry:
+
+{{result.ssl.expiry}}
+
+
+<br>
+
+
+Days Remaining:
+
+{{result.ssl.days_remaining}}
+
+
 </div>
 
 
+</div>
+
+
+
+
+
+
+
 <div class="info">
-<b>Response Time</b><br>
+
+
+<span class="title">
+
+Technology
+
+</span>
+
+
+<br><br>
+
+
+
+{% for tech in result.technology %}
+
+
+<span class="tech">
+
+{{tech}}
+
+</span>
+
+
+{% endfor %}
+
+
+</div>
+
+
+
+
+
+
+
+<div class="info">
+
+
+<span class="title">
+
+Response Time
+
+</span>
+
+
+<br>
+
 {{result.response_time}} ms
+
+
 </div>
+
+
+
+
 
 
 <div class="info">
-<b>Open Ports</b><br>
-{{result.ports}}
-</div>
+
+
+<span class="title">
+
+Open Ports
+
+</span>
+
+
+<br><br>
+
+
+{% for port in result.ports %}
+
+
+<span class="port">
+
+{{port.port}} -
+
+{{port.service}}
+
+</span>
+
+
+{% endfor %}
 
 
 
 </div>
+
+
+
+
+</div>
+
 
 
 </div>
@@ -496,9 +738,11 @@ Technical Information
 <div class="section">
 
 
-<h3>
-Security Vulnerabilities & Improvements
-</h3>
+<h2>
+
+🚨 Security Vulnerabilities & Improvements
+
+</h2>
 
 
 
@@ -507,15 +751,14 @@ Security Vulnerabilities & Improvements
 
 <div class="empty">
 
-✅ No security issues detected
+✅ No security vulnerabilities detected
 
 </div>
 
 
+
 {% else %}
 
-
-<ul>
 
 
 
@@ -523,8 +766,7 @@ Security Vulnerabilities & Improvements
 
 
 
-<li>
-
+<div class="issue">
 
 
 <h3>
@@ -535,60 +777,7 @@ Security Vulnerabilities & Improvements
 
 
 
-<div class="explain">
-
-
 <p>
-
-<span class="label">
-What does this mean?
-</span>
-
-<br>
-
-{{issue.simple_explanation or issue.description}}
-
-</p>
-
-
-
-
-<p>
-
-<span class="label">
-Why does this matter?
-</span>
-
-<br>
-
-{{issue.business_impact or "Security improvement recommended."}}
-
-</p>
-
-
-
-
-<p>
-
-<span class="label">
-How to fix?
-</span>
-
-<br>
-
-{{issue.recommendation}}
-
-</p>
-
-
-
-</div>
-
-
-
-
-<br>
-
 
 
 <b>
@@ -600,8 +789,8 @@ CVSS Score:
 {{issue.cvss_score or issue.cvss}}
 
 
+</p>
 
-<br><br>
 
 
 
@@ -636,15 +825,63 @@ criticalb
 
 
 
-
 <div class="explain">
 
 
-<span class="label">
+<b>
+
+What does this mean?
+
+</b>
+
+
+<p>
+
+{{issue.simple_explanation or issue.description}}
+
+</p>
+
+
+
+<b>
+
+Why does this matter?
+
+</b>
+
+
+<p>
+
+{{issue.business_impact or "Security improvement recommended."}}
+
+</p>
+
+
+
+
+<b>
+
+How to fix?
+
+</b>
+
+
+<p>
+
+{{issue.recommendation}}
+
+</p>
+
+
+
+<hr>
+
+
+<b>
 
 Technical Details
 
-</span>
+</b>
 
 
 <p class="small">
@@ -658,15 +895,12 @@ Technical Details
 
 
 
-</li>
+</div>
 
 
 
 {% endfor %}
 
-
-
-</ul>
 
 
 {% endif %}
@@ -688,7 +922,9 @@ Technical Details
 
 href="/download-report">
 
+
 📄 Download Professional CyberSentinel SOC Report
+
 
 </a>
 
@@ -698,12 +934,13 @@ href="/download-report">
 
 
 
+
 {% endif %}
 
 
 
-</div>
 
+</div>
 
 
 </body>

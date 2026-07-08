@@ -6,15 +6,18 @@
 import socket
 import requests
 import time
+import ssl
 
 from datetime import datetime
 
 from urllib.parse import urlparse
 
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+
 
 
 COMMON_PORTS = [
-
     21,
     22,
     25,
@@ -25,7 +28,6 @@ COMMON_PORTS = [
     443,
     3306,
     8080
-
 ]
 
 
@@ -38,11 +40,31 @@ COMMON_PORTS = [
 
 def normalize_url(url):
 
-    url=url.strip()
+    url = url.strip()
 
-    url=url.replace(
+    url = url.replace(
         " ",
         ""
+    )
+
+
+    # Fix typing mistakes
+
+    url = url.replace(
+        "w.w.w.",
+        "www."
+    )
+
+
+    url = url.replace(
+        "ww.w.",
+        "www."
+    )
+
+
+    url = url.replace(
+        "www..",
+        "www."
     )
 
 
@@ -50,10 +72,95 @@ def normalize_url(url):
         ("http://","https://")
     ):
 
-        url="https://" + url
+        url = "https://" + url
 
 
     return url
+
+
+
+
+
+# ---------------------------------
+# SSL CERTIFICATE CHECK
+# ---------------------------------
+
+def check_ssl_certificate(domain):
+
+    try:
+
+        context = ssl.create_default_context()
+
+
+        with socket.create_connection(
+            (domain,443),
+            timeout=5
+        ) as sock:
+
+
+            with context.wrap_socket(
+                sock,
+                server_hostname=domain
+            ) as ssock:
+
+
+                cert = ssock.getpeercert(
+                    binary_form=True
+                )
+
+
+                certificate = x509.load_der_x509_certificate(
+                    cert,
+                    default_backend()
+                )
+
+
+                expiry = certificate.not_valid_after
+
+
+                issuer = certificate.issuer.rfc4514_string()
+
+
+
+                days = (
+                    expiry -
+                    datetime.utcnow()
+                ).days
+
+
+
+                return {
+
+                    "status":"Valid",
+
+                    "issuer":issuer,
+
+                    "expiry":
+                    expiry.strftime(
+                        "%Y-%m-%d"
+                    ),
+
+                    "days_remaining":
+                    days
+
+                }
+
+
+    except Exception:
+
+
+        return {
+
+            "status":"Failed",
+
+            "issuer":"",
+
+            "expiry":"",
+
+            "days_remaining":0
+
+        }
+
 
 
 
@@ -65,7 +172,7 @@ def normalize_url(url):
 
 def check_open_ports(domain):
 
-    open_ports=[]
+    ports=[]
 
 
     for port in COMMON_PORTS:
@@ -84,11 +191,15 @@ def check_open_ports(domain):
 
 
             result=sock.connect_ex(
-                (domain,port)
+                (
+                    domain,
+                    port
+                )
             )
 
 
             if result==0:
+
 
                 service="Unknown"
 
@@ -96,11 +207,13 @@ def check_open_ports(domain):
                 if port==80:
                     service="HTTP"
 
+
                 elif port==443:
                     service="HTTPS"
 
 
-                open_ports.append({
+
+                ports.append({
 
                     "port":port,
 
@@ -119,15 +232,14 @@ def check_open_ports(domain):
 
 
 
-    return open_ports
-
+    return ports
 
 
 
 
 
 # ---------------------------------
-# SECURITY HEADER ANALYSIS
+# SECURITY HEADER CHECK
 # ---------------------------------
 
 def analyze_headers(headers):
@@ -136,34 +248,26 @@ def analyze_headers(headers):
     findings=[]
 
 
-
-    security_headers={
+    checks={
 
 
         "Content-Security-Policy":{
 
-
             "name":
             "Missing Content Security Policy",
 
-
             "cvss":5.3,
 
-
             "severity":"Medium",
-
 
             "owasp":
             "A05:2021 - Security Misconfiguration",
 
-
             "component":
             "HTTP Security Headers",
 
-
             "impact":
             "Missing CSP may increase exposure to script injection attacks.",
-
 
             "fix":
             "Enable Content-Security-Policy security header."
@@ -174,31 +278,24 @@ def analyze_headers(headers):
 
         "Strict-Transport-Security":{
 
-
             "name":
             "Missing HTTPS Security Policy",
 
-
             "cvss":5.3,
 
-
             "severity":"Medium",
-
 
             "owasp":
             "A05:2021 - Security Misconfiguration",
 
-
             "component":
             "HTTPS Configuration",
 
-
             "impact":
-            "Without HSTS, users may be exposed to downgrade attacks.",
-
+            "Without HSTS users may be exposed to downgrade attacks.",
 
             "fix":
-            "Enable Strict-Transport-Security security header."
+            "Enable Strict-Transport-Security header."
 
         },
 
@@ -206,31 +303,24 @@ def analyze_headers(headers):
 
         "X-Content-Type-Options":{
 
-
             "name":
             "Missing MIME Protection",
 
-
             "cvss":3.1,
 
-
             "severity":"Low",
-
 
             "owasp":
             "A05:2021 - Security Misconfiguration",
 
-
             "component":
             "HTTP Security Headers",
 
-
             "impact":
-            "Missing MIME protection may allow browser interpretation attacks.",
-
+            "Missing MIME protection may increase browser attack risks.",
 
             "fix":
-            "Enable X-Content-Type-Options security header."
+            "Enable X-Content-Type-Options header."
 
         },
 
@@ -238,31 +328,24 @@ def analyze_headers(headers):
 
         "Referrer-Policy":{
 
-
             "name":
             "Missing Referrer Policy",
 
-
             "cvss":3.1,
 
-
             "severity":"Low",
-
 
             "owasp":
             "A05:2021 - Security Misconfiguration",
 
-
             "component":
             "HTTP Security Headers",
 
-
             "impact":
-            "Referrer information may leak unnecessarily.",
-
+            "Sensitive referrer information may be exposed.",
 
             "fix":
-            "Enable Referrer-Policy security header."
+            "Enable Referrer-Policy header."
 
         }
 
@@ -271,7 +354,8 @@ def analyze_headers(headers):
 
 
 
-    for header,data in security_headers.items():
+
+    for header,data in checks.items():
 
 
         if header not in headers:
@@ -279,50 +363,32 @@ def analyze_headers(headers):
 
             findings.append({
 
-
                 "name":
                 data["name"],
-
-
-                "title":
-                data["name"],
-
-
-                "severity":
-                data["severity"],
-
 
                 "cvss":
                 data["cvss"],
 
+                "severity":
+                data["severity"],
 
                 "owasp":
                 data["owasp"],
 
-
                 "affected_component":
                 data["component"],
-
 
                 "impact":
                 data["impact"],
 
-
                 "business_impact":
                 data["impact"],
-
-
-                "simple_explanation":
-                data["name"],
-
 
                 "description":
                 "Security header is missing.",
 
-
                 "technical_explanation":
                 "Security header is missing.",
-
 
                 "recommendation":
                 data["fix"]
@@ -336,20 +402,16 @@ def analyze_headers(headers):
 
 
 
-
 # ---------------------------------
 # COOKIE ANALYSIS
 # ---------------------------------
 
 def analyze_cookies(cookies):
 
-
     findings=[]
 
 
-
     for cookie in cookies:
-
 
 
         if not cookie.secure:
@@ -357,50 +419,26 @@ def analyze_cookies(cookies):
 
             findings.append({
 
-
                 "name":
                 "Cookie Missing Secure Flag",
-
-
-                "title":
-                "Cookie Missing Secure Flag",
-
-
-                "severity":
-                "Low",
-
 
                 "cvss":
                 3.1,
 
+                "severity":
+                "Low",
 
                 "owasp":
                 "A05:2021 - Security Misconfiguration",
 
-
                 "affected_component":
                 "Browser Cookies",
-
 
                 "impact":
                 "Improper cookie protection may expose session information.",
 
-
-                "business_impact":
-                "Improper cookie protection may expose session information.",
-
-
-                "simple_explanation":
-                cookie.name,
-
-
                 "description":
                 cookie.name,
-
-
-                "technical_explanation":
-                "Cookie is missing Secure attribute.",
-
 
                 "recommendation":
                 "Enable Secure cookie attribute."
@@ -410,39 +448,6 @@ def analyze_cookies(cookies):
 
 
     return findings
-
-
-
-
-
-
-# ---------------------------------
-# SSL CHECK
-# ---------------------------------
-
-def ssl_status(url):
-
-
-    if url.startswith(
-        "https"
-    ):
-
-        return {
-
-            "status":
-            "Valid"
-
-        }
-
-
-    return {
-
-        "status":
-        "Not Secure"
-
-    }
-
-
 
 
 
@@ -458,7 +463,9 @@ def scan_website(url):
     try:
 
 
-        url=normalize_url(url)
+        url=normalize_url(
+            url
+        )
 
 
 
@@ -477,7 +484,7 @@ def scan_website(url):
             headers={
 
                 "User-Agent":
-                "CyberSentinel Security Scanner"
+                "Mozilla/5.0 CyberSentinel Security Scanner"
 
             }
 
@@ -487,7 +494,9 @@ def scan_website(url):
 
         response_time=round(
 
-            (time.time()-start)*1000,
+            (
+                time.time()-start
+            )*1000,
 
             2
 
@@ -500,22 +509,13 @@ def scan_website(url):
         )
 
 
-
         domain=parsed.netloc
 
 
 
-        try:
-
-            ip=socket.gethostbyname(
-                domain
-            )
-
-
-        except:
-
-            ip="Unknown"
-
+        ip=socket.gethostbyname(
+            domain
+        )
 
 
 
@@ -528,29 +528,15 @@ def scan_website(url):
         findings=[]
 
 
-
         findings.extend(
-
-            analyze_headers(
-                headers
-            )
-
+            analyze_headers(headers)
         )
 
 
-
         findings.extend(
-
             analyze_cookies(
                 response.cookies
             )
-
-        )
-
-
-
-        ports=check_open_ports(
-            domain
         )
 
 
@@ -571,21 +557,19 @@ def scan_website(url):
 
 
             "ssl":
-            ssl_status(
-                response.url
+            check_ssl_certificate(
+                domain
             ),
 
 
             "ports":
-            ports,
+            check_open_ports(
+                domain
+            ),
 
 
             "http_status":
             response.status_code,
-
-
-            "response_time":
-            response_time,
 
 
             "server":
@@ -602,24 +586,16 @@ def scan_website(url):
             ),
 
 
-
-            "cookies":
-            list(
-                response.cookies
-            ),
-
+            "response_time":
+            response_time,
 
 
             "findings":
             findings,
 
 
-
-            # NEW
-
             "scanner_version":
             "CyberSentinel v2.1",
-
 
 
             "scan_time":
@@ -628,12 +604,10 @@ def scan_website(url):
             ),
 
 
-
             "scan_status":
             "Success"
 
         }
-
 
 
 
@@ -653,27 +627,18 @@ def scan_website(url):
             "Unknown",
 
 
-            "headers":{},
-
-
             "ssl":
             {
-
-                "status":
-                "Failed"
-
+                "status":"Failed"
             },
 
 
-            "ports":[],
+            "ports":
+            [],
 
 
             "http_status":
             "Unavailable",
-
-
-            "response_time":
-            0,
 
 
             "server":
@@ -684,25 +649,23 @@ def scan_website(url):
             "Unknown",
 
 
+            "response_time":
+            0,
+
 
             "findings":[{
-
 
                 "name":
                 "Scan Failed",
 
+                "cvss":
+                0,
 
                 "severity":
                 "INFO",
 
-
-                "cvss":
-                0,
-
-
                 "description":
                 str(e),
-
 
                 "recommendation":
                 "Check website URL."
@@ -710,17 +673,14 @@ def scan_website(url):
             }],
 
 
-
             "scanner_version":
             "CyberSentinel v2.1",
-
 
 
             "scan_time":
             datetime.now().strftime(
                 "%d %B %Y %H:%M:%S"
             ),
-
 
 
             "scan_status":

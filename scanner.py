@@ -5,36 +5,27 @@ import time
 from urllib.parse import urlparse
 
 
-# ==================================================
-# CyberSentinel Security Scanner
-# Version: Final SOC Edition
-# ==================================================
-
-
 COMMON_PORTS = [
-    21,      # FTP
-    22,      # SSH
-    23,      # Telnet
-    25,      # SMTP
-    53,      # DNS
-    80,      # HTTP
-    110,     # POP3
-    143,     # IMAP
-    443,     # HTTPS
-    3306,    # MySQL
-    8080     # Web Proxy
+    21,
+    22,
+    25,
+    53,
+    80,
+    110,
+    143,
+    443,
+    3306,
+    8080
 ]
 
 
-
-# ==================================================
-# PORT SCANNER
-# ==================================================
+# ---------------------------------
+# Port Scanner
+# ---------------------------------
 
 def check_open_ports(domain):
 
     open_ports = []
-
 
     for port in COMMON_PORTS:
 
@@ -47,25 +38,19 @@ def check_open_ports(domain):
 
             sock.settimeout(0.5)
 
-
             result = sock.connect_ex(
                 (domain, port)
             )
 
-
             if result == 0:
-
                 open_ports.append(port)
-
-
 
             sock.close()
 
 
-        except Exception:
+        except:
 
             pass
-
 
 
     return open_ports
@@ -74,59 +59,13 @@ def check_open_ports(domain):
 
 
 
-# ==================================================
-# SECURITY FINDING BUILDER
-# ==================================================
-
-def create_finding(
-        title,
-        severity,
-        cvss,
-        simple,
-        impact,
-        technical,
-        recommendation
-):
-
-    return {
-
-        "title": title,
-
-        "name": title,
-
-        "severity": severity,
-
-        "cvss": cvss,
-
-
-        "simple_explanation": simple,
-
-
-        "business_impact": impact,
-
-
-        "technical_explanation": technical,
-
-
-        "description": technical,
-
-
-        "recommendation": recommendation
-
-    }
-
-
-
-
-
-# ==================================================
-# SECURITY HEADER ANALYSIS
-# ==================================================
+# ---------------------------------
+# Security Header Analysis
+# ---------------------------------
 
 def analyze_headers(headers):
 
     findings = []
-
 
 
     security_headers = {
@@ -134,33 +73,26 @@ def analyze_headers(headers):
 
         "Content-Security-Policy": {
 
-
             "title":
             "Missing Content Security Policy",
-
-
-            "severity":
-            "Medium",
-
 
             "cvss":
             5.3,
 
+            "severity":
+            "Medium",
 
             "simple":
-            "The website does not have a browser policy that helps prevent malicious scripts.",
-
+            "Your website is missing an extra browser security setting that helps block harmful scripts.",
 
             "impact":
-            "Attackers may have a higher chance of performing Cross-Site Scripting attacks.",
-
+            "Attackers may have a higher chance of injecting unwanted scripts into website pages.",
 
             "technical":
-            "Content-Security-Policy controls which scripts and resources browsers are allowed to load.",
-
+            "Content-Security-Policy reduces the impact of Cross-Site Scripting attacks.",
 
             "fix":
-            "Implement a suitable Content-Security-Policy header."
+            "Implement Content-Security-Policy security header."
 
         },
 
@@ -170,28 +102,22 @@ def analyze_headers(headers):
 
 
             "title":
-            "Missing HTTP Strict Transport Security",
-
-
-            "severity":
-            "Medium",
-
+            "Missing HTTPS Security Policy",
 
             "cvss":
             5.3,
 
+            "severity":
+            "Medium",
 
             "simple":
-            "The website does not force browsers to always use HTTPS.",
-
+            "Your website does not force browsers to always use secure HTTPS connections.",
 
             "impact":
-            "Users may be exposed to downgrade or insecure connection attacks.",
-
+            "Users may be exposed to insecure connection downgrade attacks.",
 
             "technical":
-            "HSTS forces browsers to communicate only through encrypted HTTPS connections.",
-
+            "HSTS instructs browsers to use HTTPS only.",
 
             "fix":
             "Enable Strict-Transport-Security header."
@@ -206,29 +132,23 @@ def analyze_headers(headers):
             "title":
             "Missing Clickjacking Protection",
 
+            "cvss":
+            4.7,
 
             "severity":
             "Medium",
 
-
-            "cvss":
-            4.7,
-
-
             "simple":
-            "The website may be displayed inside another malicious website.",
-
+            "Your website has limited protection against being displayed inside another website.",
 
             "impact":
-            "Attackers may trick users into unwanted clicks.",
-
+            "Attackers may trick users into clicking hidden elements.",
 
             "technical":
             "X-Frame-Options prevents unauthorized iframe embedding.",
 
-
             "fix":
-            "Set X-Frame-Options to DENY or SAMEORIGIN."
+            "Enable X-Frame-Options: DENY or SAMEORIGIN."
 
         },
 
@@ -238,64 +158,25 @@ def analyze_headers(headers):
 
 
             "title":
-            "Missing MIME Type Protection",
-
-
-            "severity":
-            "Low",
-
+            "Missing MIME Protection",
 
             "cvss":
-            3.7,
+            4.7,
 
+            "severity":
+            "Medium",
 
             "simple":
-            "The website does not prevent browsers from guessing file types.",
-
+            "Your website is missing browser file protection settings.",
 
             "impact":
-            "Some browser-based attacks may become easier.",
-
+            "Some browser attacks may become easier.",
 
             "technical":
             "X-Content-Type-Options prevents MIME sniffing attacks.",
 
-
             "fix":
-            "Enable X-Content-Type-Options: nosniff."
-
-        },
-
-
-        "Referrer-Policy": {
-
-
-            "title":
-            "Missing Referrer Policy",
-
-
-            "severity":
-            "Low",
-
-
-            "cvss":
-            3.1,
-
-
-            "simple":
-            "The website may reveal extra browsing information when users visit other websites.",
-
-
-            "impact":
-            "Sensitive URL information may be leaked.",
-
-
-            "technical":
-            "Referrer-Policy controls browser referrer information sharing.",
-
-
-            "fix":
-            "Implement a secure Referrer-Policy header."
+            "Enable X-Content-Type-Options header."
 
         }
 
@@ -303,123 +184,151 @@ def analyze_headers(headers):
 
 
 
-    for header, data in security_headers.items():
+
+    for header,data in security_headers.items():
 
 
         if header not in headers:
 
 
-            findings.append(
+            findings.append({
 
-                create_finding(
+                "title":
+                data["title"],
 
-                    data["title"],
 
-                    data["severity"],
+                "name":
+                data["title"],
 
-                    data["cvss"],
 
-                    data["simple"],
+                "severity":
+                data["severity"],
 
-                    data["impact"],
 
-                    data["technical"],
+                "cvss":
+                data["cvss"],
 
-                    data["fix"]
 
-                )
+                "simple_explanation":
+                data["simple"],
 
-            )
 
+                "business_impact":
+                data["impact"],
+
+
+                "technical_explanation":
+                data["technical"],
+
+
+                "description":
+                data["technical"],
+
+
+                "recommendation":
+                data["fix"]
+
+            })
 
 
     return findings
-# ==================================================
-# COOKIE SECURITY ANALYSIS
-# ==================================================
+
+
+
+
+
+
+# ---------------------------------
+# Cookie Analysis
+# ---------------------------------
 
 def analyze_cookies(cookies):
 
-    findings = []
+    findings=[]
 
 
     for cookie in cookies:
 
 
-        # Secure flag check
-
         if not cookie.secure:
 
 
-            findings.append(
+            findings.append({
 
-                create_finding(
+                "title":
+                "Cookie Missing Secure Flag",
 
-                    "Cookie Missing Secure Flag",
+                "name":
+                "Cookie Missing Secure Flag",
 
-                    "Low",
+                "severity":
+                "Low",
 
-                    3.1,
-
-                    "A website cookie is not marked as secure.",
-
-                    "Session information may have increased exposure risk if transmitted without encryption.",
-
-                    "The Secure attribute ensures cookies are only sent through HTTPS connections.",
-
-                    "Enable the Secure attribute for all sensitive cookies."
-
-                )
-
-            )
+                "cvss":
+                3.1,
 
 
-
-        # HttpOnly check
-
-        httponly = False
+                "simple_explanation":
+                "A website cookie is not marked as secure.",
 
 
-        try:
-
-            for item in cookie._rest:
-
-                if "httponly" in item.lower():
-
-                    httponly = True
+                "business_impact":
+                "Session information may have increased exposure risk.",
 
 
-        except Exception:
+                "technical_explanation":
+                "Cookies without Secure attribute may be transmitted insecurely.",
 
-            pass
+
+                "description":
+                f"Cookie {cookie.name} is not secured.",
+
+
+                "recommendation":
+                "Enable Secure cookie attribute."
+
+            })
 
 
 
-        if not httponly:
+        if "httponly" not in cookie._rest:
 
 
-            findings.append(
+            findings.append({
 
-                create_finding(
+                "title":
+                "Cookie Missing HttpOnly Flag",
 
-                    "Cookie Missing HttpOnly Flag",
+                "name":
+                "Cookie Missing HttpOnly Flag",
 
-                    "Medium",
+                "severity":
+                "Medium",
 
-                    4.7,
+                "cvss":
+                4.7,
 
-                    "Browser scripts may be able to access website cookies.",
 
-                    "This may increase the impact of Cross-Site Scripting attacks.",
+                "simple_explanation":
+                "A browser script may be able to access this cookie.",
 
-                    "HttpOnly prevents JavaScript from accessing sensitive cookies.",
 
-                    "Enable HttpOnly attribute on authentication cookies."
+                "business_impact":
+                "This can increase the impact of browser attacks.",
 
-                )
 
-            )
+                "technical_explanation":
+                "HttpOnly prevents JavaScript access to sensitive cookies.",
 
+
+                "description":
+                f"Cookie {cookie.name} may be accessible through scripts.",
+
+
+                "recommendation":
+                "Enable HttpOnly flag."
+
+            })
 
 
     return findings
@@ -428,285 +337,55 @@ def analyze_cookies(cookies):
 
 
 
-# ==================================================
-# URL NORMALIZATION
-# ==================================================
+# ---------------------------------
+# URL Normalization
+# ---------------------------------
 
 def normalize_url(url):
 
 
-    url = url.strip()
+    url=url.strip()
 
 
-
-    url = url.replace(
+    url=url.replace(
         " ",
         ""
     )
 
 
 
-    if not url.startswith(
-        "http://"
-    ) and not url.startswith(
-        "https://"
-    ):
-
-        url = "https://" + url
-
-
-
-    return url
-
-
-
-
-
-# ==================================================
-# RISK ENGINE
-# ==================================================
-
-def calculate_risk_score(findings):
-
-
-    if not findings:
-
-        return 0
-
-
-
-    score = 0
-
-
-
-    for finding in findings:
-
-
-        score += float(
-
-            finding.get(
-                "cvss",
-                0
-            )
-
-        )
-
-
-
-    return min(
-
-        round(score, 1),
-
-        100
-
+    clean=url.replace(
+        "https://",
+        ""
+    ).replace(
+        "http://",
+        ""
     )
 
 
 
-
-
-# ==================================================
-# SECURITY GRADE
-# ==================================================
-
-def calculate_grade(score):
-
-
-    if score <= 20:
-
-        return "A"
-
-
-    elif score <= 40:
-
-        return "B"
-
-
-    elif score <= 60:
-
-        return "C"
-
-
-    elif score <= 80:
-
-        return "D"
-
-
-    else:
-
-        return "F"
-
-
-
-
-
-
-
-# ==================================================
-# RISK CLASSIFICATION
-# ==================================================
-
-def classify_risk(score):
-
-
-    if score <= 20:
-
-
-        return {
-
-            "level":
-            "LOW",
-
-
-            "verdict":
-            "SAFE",
-
-
-            "summary":
-            "The website demonstrates a strong security posture with limited security concerns."
-
-        }
-
-
-
-    elif score <= 50:
-
-
-        return {
-
-
-            "level":
-            "MEDIUM",
-
-
-            "verdict":
-            "MODERATE RISK",
-
-
-            "summary":
-            "Some security weaknesses were identified. Recommended improvements should be applied."
-
-        }
-
-
-
-    elif score <= 80:
-
-
-        return {
-
-
-            "level":
-            "HIGH",
-
-
-            "verdict":
-            "HIGH RISK",
-
-
-            "summary":
-            "Multiple security issues were detected. Immediate security improvements are recommended."
-
-        }
-
-
-
-    else:
-
-
-        return {
-
-
-            "level":
-            "CRITICAL",
-
-
-            "verdict":
-            "CRITICAL RISK",
-
-
-            "summary":
-            "Critical security weaknesses were detected. Immediate security review is required."
-
-        }
-
-
-
-
-
-# ==================================================
-# PORT RISK ANALYSIS
-# ==================================================
-
-def analyze_ports(ports):
-
-
-    findings = []
-
-
-
-    risky_ports = {
-
-
-        21:
-        (
-            "FTP Port Exposed",
-            "High",
-            7.5,
-            "An outdated file transfer service is publicly accessible.",
-            "Attackers may attempt unauthorized access or data interception.",
-            "FTP transfers data without modern encryption protection.",
-            "Disable FTP and use secure alternatives such as SFTP."
-        ),
-
-
-
-        23:
-        (
-            "Telnet Port Exposed",
-            "Critical",
-            9.0,
-            "An insecure remote access service is publicly available.",
-            "Attackers may capture login information.",
-            "Telnet transmits credentials without encryption.",
-            "Disable Telnet and use SSH."
+    if clean.startswith(
+        "w.w.w."
+    ):
+
+        clean=clean.replace(
+            "w.w.w.",
+            "www.",
+            1
         )
 
-    }
+
+
+    return "https://" + clean
 
 
 
-    for port in ports:
-
-
-        if port in risky_ports:
-
-
-            data = risky_ports[port]
-
-
-            findings.append(
-
-                create_finding(
-
-                    data[0],
-                    data[1],
-                    data[2],
-                    data[3],
-                    data[4],
-                    data[5],
-                    data[6]
-
-                )
-
-            )
 
 
 
-    return findings
-# ==================================================
-# MAIN WEBSITE SCANNER
-# ==================================================
+# ---------------------------------
+# Main Scanner
+# ---------------------------------
 
 def scan_website(url):
 
@@ -714,31 +393,21 @@ def scan_website(url):
     try:
 
 
-        # Normalize URL
-
-        url = normalize_url(
-            url
-        )
+        url=normalize_url(url)
 
 
+        parsed=urlparse(url)
 
-        parsed = urlparse(
-            url
-        )
+
+        domain=parsed.netloc
 
 
 
-        domain = parsed.netloc
+        start=time.time()
 
 
 
-        start_time = time.time()
-
-
-
-        # Website request
-
-        response = requests.get(
+        response=requests.get(
 
             url,
 
@@ -749,7 +418,7 @@ def scan_website(url):
             headers={
 
                 "User-Agent":
-                "CyberSentinel-SOC-Scanner"
+                "CyberSentinel Security Scanner"
 
             }
 
@@ -757,9 +426,9 @@ def scan_website(url):
 
 
 
-        response_time = round(
+        response_time=round(
 
-            (time.time() - start_time) * 1000,
+            (time.time()-start)*1000,
 
             2
 
@@ -767,73 +436,40 @@ def scan_website(url):
 
 
 
-
-
-        # IP Resolution
-
         try:
 
-
-            ip_address = socket.gethostbyname(
-
-                domain
-
-            )
+            ip=socket.gethostbyname(domain)
 
 
-        except Exception:
+        except:
 
-
-            ip_address = "Unknown"
+            ip="Unknown"
 
 
 
 
-
-
-
-        # Collect headers
-
-        headers = dict(
-
+        headers=dict(
             response.headers
-
         )
 
 
 
+        findings=[]
 
 
-        findings = []
-
-
-
-
-
-        # Header Security Scan
 
         findings.extend(
 
-            analyze_headers(
-
-                headers
-
-            )
+            analyze_headers(headers)
 
         )
 
 
-
-
-
-        # Cookie Security Scan
 
         findings.extend(
 
             analyze_cookies(
-
                 response.cookies
-
             )
 
         )
@@ -841,62 +477,52 @@ def scan_website(url):
 
 
 
-
-        # Port Scan
-
-        open_ports = check_open_ports(
-
+        ports=check_open_ports(
             domain
-
         )
 
 
 
 
 
-        # Port Vulnerability Scan
-
-        findings.extend(
-
-            analyze_ports(
-
-                open_ports
-
-            )
-
-        )
+        if 21 in ports:
 
 
+            findings.append({
+
+                "title":
+                "FTP Port Open",
+
+                "name":
+                "FTP Port Open",
+
+                "severity":
+                "High",
+
+                "cvss":
+                7.5,
 
 
+                "simple_explanation":
+                "An old file transfer service is publicly available.",
 
 
-        # Calculate Risk
-
-        risk_score = calculate_risk_score(
-
-            findings
-
-        )
+                "business_impact":
+                "Attackers may attempt unauthorized access.",
 
 
-
-        risk = classify_risk(
-
-            risk_score
-
-        )
+                "technical_explanation":
+                "FTP does not provide modern encryption protection.",
 
 
-
-        grade = calculate_grade(
-
-            risk_score
-
-        )
+                "description":
+                "FTP service detected.",
 
 
+                "recommendation":
+                "Disable FTP and use SFTP."
 
+            })
 
 
 
@@ -905,143 +531,64 @@ def scan_website(url):
 
 
             "url":
-
             response.url,
 
 
-
-            "domain":
-
-            domain,
-
-
-
             "ip":
-
-            ip_address,
-
+            ip,
 
 
             "headers":
-
             headers,
 
 
-
             "ssl":
-
             response.url.startswith(
-
                 "https"
-
             ),
-
 
 
             "ports":
-
-            open_ports,
-
+            ports,
 
 
             "http_status":
-
             response.status_code,
 
 
-
             "response_time":
-
             response_time,
 
 
-
             "server":
-
             headers.get(
-
                 "Server",
-
                 "Unknown"
-
             ),
-
 
 
             "technology":
-
             headers.get(
-
                 "X-Powered-By",
-
                 "Not Disclosed"
-
             ),
-
 
 
             "cookies":
-
-            list(
-
-                response.cookies
-
-            ),
-
-
-
+            list(response.cookies),
 
 
             "findings":
-
             findings,
 
 
-
-
+            # Risk engine calculates this
 
             "risk_score":
-
-            risk_score,
-
-
-
-
-
-            "risk_level":
-
-            risk["level"],
-
-
-
-
-
-            "security_grade":
-
-            grade,
-
-
-
-
-
-            "safety_verdict":
-
-            risk["verdict"],
-
-
-
-
-
-            "final_summary":
-
-            risk["summary"],
-
-
-
+            0,
 
 
             "scan_status":
-
             "Success"
 
         }
@@ -1050,9 +597,7 @@ def scan_website(url):
 
 
 
-    except requests.exceptions.RequestException as error:
-
-
+    except requests.exceptions.RequestException as e:
 
 
 
@@ -1060,354 +605,89 @@ def scan_website(url):
 
 
             "url":
-
             url,
 
 
-
-            "domain":
-
-            "Unknown",
-
-
-
             "ip":
-
             "Unknown",
-
 
 
             "headers":
-
             {},
 
 
-
             "ssl":
-
             False,
 
 
-
             "ports":
-
             [],
-
 
 
             "http_status":
-
             "Unavailable",
 
 
-
             "response_time":
-
             0,
 
 
-
             "server":
-
             "Unknown",
-
 
 
             "technology":
-
             "Unknown",
 
 
 
-            "cookies":
-
-            [],
+            "findings":[{
 
 
+                "title":
+                "Scan Failed",
 
-            "findings": [
+
+                "name":
+                "Scan Failed",
 
 
-                create_finding(
+                "severity":
+                "INFO",
 
-                    "Website Scan Failed",
 
-                    "INFO",
+                "cvss":
+                0,
 
-                    0,
 
-                    "The website could not be scanned.",
+                "simple_explanation":
+                "The website could not be checked.",
 
-                    "A security assessment could not be completed.",
 
-                    str(error),
+                "business_impact":
+                "No security conclusion can be made until the website is reachable.",
 
-                    "Verify the website address and ensure it is reachable."
 
-                )
+                "technical_explanation":
+                "The scanner could not establish a connection.",
 
-            ],
+
+                "description":
+                str(e),
+
+
+                "recommendation":
+                "Verify the website address."
+
+            }],
 
 
 
             "risk_score":
-
             0,
 
 
-
-            "risk_level":
-
-            "UNKNOWN",
-
-
-
-            "security_grade":
-
-            "N/A",
-
-
-
-            "safety_verdict":
-
-            "SCAN FAILED",
-
-
-
-            "final_summary":
-
-            "The scanner was unable to complete the security assessment.",
-
-
-
             "scan_status":
-
             "Failed"
 
         }
-    # ==================================================
-# SCAN SUMMARY GENERATOR
-# ==================================================
-
-def generate_scan_summary(findings):
-
-
-    summary = {
-
-
-        "total":
-
-        len(findings),
-
-
-        "critical":
-
-        0,
-
-
-        "high":
-
-        0,
-
-
-        "medium":
-
-        0,
-
-
-        "low":
-
-        0
-
-    }
-
-
-
-
-    for finding in findings:
-
-
-        severity = finding.get(
-
-            "severity",
-
-            ""
-
-        ).upper()
-
-
-
-        if severity == "CRITICAL":
-
-            summary["critical"] += 1
-
-
-
-        elif severity == "HIGH":
-
-            summary["high"] += 1
-
-
-
-        elif severity == "MEDIUM":
-
-            summary["medium"] += 1
-
-
-
-        elif severity == "LOW":
-
-            summary["low"] += 1
-
-
-
-
-
-    return summary
-
-
-
-
-
-# ==================================================
-# TEST MODE
-# ==================================================
-
-if __name__ == "__main__":
-
-
-    print(
-
-        """
-
-        =================================
-
-        CyberSentinel Security Scanner
-
-        Test Mode
-
-        =================================
-
-        """
-
-    )
-
-
-
-    target = input(
-
-        "Enter website URL: "
-
-    )
-
-
-
-    result = scan_website(
-
-        target
-
-    )
-
-
-
-    print("\nWebsite:")
-
-    print(
-
-        result.get(
-
-            "url"
-
-        )
-
-    )
-
-
-
-    print("\nRisk Score:")
-
-    print(
-
-        result.get(
-
-            "risk_score"
-
-        )
-
-    )
-
-
-
-    print("\nSecurity Grade:")
-
-    print(
-
-        result.get(
-
-            "security_grade"
-
-        )
-
-    )
-
-
-
-    print("\nRisk Level:")
-
-    print(
-
-        result.get(
-
-            "risk_level"
-
-        )
-
-    )
-
-
-
-    print("\nVerdict:")
-
-    print(
-
-        result.get(
-
-            "safety_verdict"
-
-        )
-
-    )
-
-
-
-    print("\nFindings:")
-
-
-    for item in result.get(
-
-        "findings",
-
-        []
-
-    ):
-
-
-        print(
-
-            "-",
-
-            item.get(
-
-                "name"
-
-            ),
-
-            "| CVSS:",
-
-            item.get(
-
-                "cvss"
-
-            )
-
-        )

@@ -14,9 +14,6 @@ from report import generate_pdf
 app = Flask(__name__)
 
 
-# ---------------------------------
-# REPORT FOLDER
-# ---------------------------------
 
 BASE_DIR = os.path.dirname(
     os.path.abspath(__file__)
@@ -35,7 +32,6 @@ os.makedirs(
 )
 
 
-
 PDF_FILE = os.path.join(
     REPORT_FOLDER,
     "security_report.pdf"
@@ -44,8 +40,9 @@ PDF_FILE = os.path.join(
 
 
 
+
 # ---------------------------------
-# Calculate Risk Score
+# Risk Score
 # ---------------------------------
 
 def calculate_risk_score(findings):
@@ -68,9 +65,10 @@ def calculate_risk_score(findings):
 
 
     return min(
-        round(score, 1),
+        round(score,1),
         100
     )
+
 
 
 
@@ -82,7 +80,6 @@ def calculate_risk_score(findings):
 
 def classify_risk(score):
 
-
     if score <= 20:
 
         return (
@@ -92,7 +89,7 @@ def classify_risk(score):
         )
 
 
-    elif score <= 50:
+    elif score <=50:
 
         return (
             "MEDIUM",
@@ -101,7 +98,7 @@ def classify_risk(score):
         )
 
 
-    elif score <= 80:
+    elif score <=80:
 
         return (
             "HIGH",
@@ -115,18 +112,13 @@ def classify_risk(score):
         return (
             "CRITICAL",
             "CRITICAL RISK",
-            "Critical security problems were detected. The website requires immediate review."
+            "Critical security problems were detected. Immediate review is required."
         )
 
 
 
 
 
-
-
-# ---------------------------------
-# HOME PAGE
-# ---------------------------------
 
 @app.route(
     "/",
@@ -136,14 +128,14 @@ def classify_risk(score):
 def index():
 
 
-    result = None
+    result=None
 
 
 
-    if request.method == "POST":
+    if request.method=="POST":
 
 
-        user_url = request.form.get(
+        user_url=request.form.get(
             "url",
             ""
         ).strip()
@@ -161,11 +153,9 @@ def index():
 
         try:
 
-
-            scan = scan_website(
+            scan=scan_website(
                 user_url
             )
-
 
 
         except Exception:
@@ -176,44 +166,27 @@ def index():
             )
 
 
-            scan = {
+            scan={
 
-                "url": user_url,
+                "url":user_url,
 
-                "ip": "Unknown",
-
-                "headers": {},
-
-                "ssl": False,
-
-                "ports": [],
-
-                "http_status": "Unavailable",
-
-                "response_time": 0,
-
-                "server": "Unknown",
-
-                "technology": "Unknown",
-
-                "findings": []
+                "findings":[]
 
             }
 
 
 
 
-        findings = scan.get(
+        findings=scan.get(
             "findings",
             []
         )
 
 
 
-        risk_score = calculate_risk_score(
+        risk_score=calculate_risk_score(
             findings
         )
-
 
 
         risk_level, verdict, summary = classify_risk(
@@ -222,7 +195,7 @@ def index():
 
 
 
-        parsed = urlparse(
+        parsed=urlparse(
             scan.get(
                 "url",
                 user_url
@@ -231,7 +204,7 @@ def index():
 
 
 
-        issues = []
+        issues=[]
 
 
 
@@ -257,18 +230,32 @@ def index():
                 ),
 
 
-                "impact":
+                "simple_explanation":
+                finding.get(
+                    "simple_explanation",
+                    ""
+                ),
+
+
+                "business_impact":
                 finding.get(
                     "business_impact",
-                    ""
+                    finding.get(
+                        "impact",
+                        ""
+                    )
                 ),
 
 
-                "fix":
+                "impact":
                 finding.get(
-                    "recommendation",
-                    ""
+                    "impact",
+                    finding.get(
+                        "business_impact",
+                        ""
+                    )
                 ),
+
 
 
                 "recommendation":
@@ -278,18 +265,16 @@ def index():
                 ),
 
 
-                "simple_explanation":
-                finding.get(
-                    "simple_explanation",
-                    ""
-                ),
-
 
                 "technical_explanation":
                 finding.get(
                     "technical_explanation",
-                    ""
+                    finding.get(
+                        "description",
+                        ""
+                    )
                 ),
+
 
 
                 "cvss":
@@ -299,6 +284,7 @@ def index():
                 ),
 
 
+
                 "cvss_score":
                 finding.get(
                     "cvss",
@@ -306,10 +292,29 @@ def index():
                 ),
 
 
+
                 "severity":
                 finding.get(
                     "severity",
                     "INFO"
+                ),
+
+
+
+                # NEW
+
+                "owasp":
+                finding.get(
+                    "owasp",
+                    "A05:2021 - Security Misconfiguration"
+                ),
+
+
+
+                "affected_component":
+                finding.get(
+                    "affected_component",
+                    "Website Security Configuration"
                 )
 
             })
@@ -319,7 +324,8 @@ def index():
 
 
 
-        result = {
+
+        result={
 
 
             "url":
@@ -329,8 +335,10 @@ def index():
             ),
 
 
+
             "domain":
             parsed.netloc,
+
 
 
             "ip":
@@ -340,18 +348,13 @@ def index():
             ),
 
 
+
             "http_status":
             scan.get(
                 "http_status",
                 "Unknown"
             ),
 
-
-            "headers":
-            scan.get(
-                "headers",
-                {}
-            ),
 
 
             "ssl":
@@ -361,11 +364,13 @@ def index():
             ),
 
 
+
             "ports":
             scan.get(
                 "ports",
                 []
             ),
+
 
 
             "server":
@@ -375,11 +380,13 @@ def index():
             ),
 
 
+
             "technology":
             scan.get(
                 "technology",
                 "Unknown"
             ),
+
 
 
             "response_time":
@@ -389,31 +396,55 @@ def index():
             ),
 
 
-            "cookies":
-            scan.get(
-                "cookies",
-                []
-            ),
-
 
             "risk_score":
             risk_score,
+
 
 
             "risk_level":
             risk_level,
 
 
+
             "safety_verdict":
             verdict,
+
 
 
             "final_summary":
             summary,
 
 
+
             "issues":
-            issues
+            issues,
+
+
+
+            # NEW SCAN INFORMATION
+
+            "scanner_version":
+            scan.get(
+                "scanner_version",
+                "CyberSentinel v2.1"
+            ),
+
+
+
+            "scan_time":
+            scan.get(
+                "scan_time",
+                "Unknown"
+            ),
+
+
+
+            "scan_status":
+            scan.get(
+                "scan_status",
+                "Completed"
+            )
 
         }
 
@@ -421,33 +452,18 @@ def index():
 
 
 
-        # ---------------------------------
-        # CREATE PDF
-        # ---------------------------------
-
         try:
 
             generate_pdf(
                 result
             )
 
-            print(
-                "PDF created:",
-                PDF_FILE
-            )
-
 
         except Exception:
-
-
-            print(
-                "PDF Generation Failed"
-            )
 
             print(
                 traceback.format_exc()
             )
-
 
 
 
@@ -462,11 +478,6 @@ def index():
 
 
 
-
-# ---------------------------------
-# DOWNLOAD REPORT
-# ---------------------------------
-
 @app.route(
     "/download-report"
 )
@@ -477,7 +488,6 @@ def download_report():
     if os.path.exists(
         PDF_FILE
     ):
-
 
         return send_file(
 
@@ -490,9 +500,8 @@ def download_report():
         )
 
 
-
     return (
-        "Report not found. Please run a scan first.",
+        "Report not found",
         404
     )
 
@@ -501,21 +510,15 @@ def download_report():
 
 
 
-
-# ---------------------------------
-# START SERVER
-# ---------------------------------
-
-if __name__ == "__main__":
+if __name__=="__main__":
 
 
-    port = int(
+    port=int(
         os.environ.get(
             "PORT",
             10000
         )
     )
-
 
 
     app.run(

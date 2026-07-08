@@ -3,3 +3,4 @@ requests
 reportlab
 urllib3
 
+cryptography

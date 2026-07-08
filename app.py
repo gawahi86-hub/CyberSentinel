@@ -15,6 +15,12 @@ app = Flask(__name__)
 
 
 
+
+
+# ---------------------------------
+# REPORT LOCATION
+# ---------------------------------
+
 BASE_DIR = os.path.dirname(
     os.path.abspath(__file__)
 )
@@ -42,7 +48,7 @@ PDF_FILE = os.path.join(
 
 
 # ---------------------------------
-# Risk Score
+# RISK CALCULATION
 # ---------------------------------
 
 def calculate_risk_score(findings):
@@ -54,14 +60,21 @@ def calculate_risk_score(findings):
     score = 0
 
 
-    for item in findings:
+    for finding in findings:
 
-        score += float(
-            item.get(
-                "cvss",
-                0
+        try:
+
+            score += float(
+                finding.get(
+                    "cvss",
+                    0
+                )
             )
-        )
+
+        except:
+
+            pass
+
 
 
     return min(
@@ -73,12 +86,12 @@ def calculate_risk_score(findings):
 
 
 
-
 # ---------------------------------
-# Risk Classification
+# RISK LEVEL
 # ---------------------------------
 
 def classify_risk(score):
+
 
     if score <= 20:
 
@@ -89,7 +102,7 @@ def classify_risk(score):
         )
 
 
-    elif score <=50:
+    elif score <= 50:
 
         return (
             "MEDIUM",
@@ -98,7 +111,7 @@ def classify_risk(score):
         )
 
 
-    elif score <=80:
+    elif score <= 80:
 
         return (
             "HIGH",
@@ -112,7 +125,7 @@ def classify_risk(score):
         return (
             "CRITICAL",
             "CRITICAL RISK",
-            "Critical security problems were detected. Immediate review is required."
+            "Critical security problems were detected. Immediate security action is required."
         )
 
 
@@ -120,22 +133,29 @@ def classify_risk(score):
 
 
 
+
+# ---------------------------------
+# MAIN DASHBOARD
+# ---------------------------------
+
 @app.route(
     "/",
-    methods=["GET","POST"]
+    methods=[
+        "GET",
+        "POST"
+    ]
 )
 
 def index():
 
-
-    result=None
-
+    result = None
 
 
-    if request.method=="POST":
+
+    if request.method == "POST":
 
 
-        user_url=request.form.get(
+        user_url = request.form.get(
             "url",
             ""
         ).strip()
@@ -153,7 +173,7 @@ def index():
 
         try:
 
-            scan=scan_website(
+            scan = scan_website(
                 user_url
             )
 
@@ -166,27 +186,34 @@ def index():
             )
 
 
-            scan={
+            scan = {
 
-                "url":user_url,
+                "url":
+                user_url,
 
-                "findings":[]
+                "findings":
+                [],
+
+                "scan_status":
+                "Failed"
 
             }
 
 
 
 
-        findings=scan.get(
+
+        findings = scan.get(
             "findings",
             []
         )
 
 
 
-        risk_score=calculate_risk_score(
+        risk_score = calculate_risk_score(
             findings
         )
+
 
 
         risk_level, verdict, summary = classify_risk(
@@ -195,7 +222,7 @@ def index():
 
 
 
-        parsed=urlparse(
+        parsed = urlparse(
             scan.get(
                 "url",
                 user_url
@@ -204,11 +231,12 @@ def index():
 
 
 
-        issues=[]
+        issues = []
 
 
 
         for finding in findings:
+
 
 
             issues.append({
@@ -223,6 +251,7 @@ def index():
                 ),
 
 
+
                 "description":
                 finding.get(
                     "description",
@@ -230,11 +259,16 @@ def index():
                 ),
 
 
+
                 "simple_explanation":
                 finding.get(
                     "simple_explanation",
-                    ""
+                    finding.get(
+                        "description",
+                        ""
+                    )
                 ),
+
 
 
                 "business_impact":
@@ -247,13 +281,11 @@ def index():
                 ),
 
 
+
                 "impact":
                 finding.get(
                     "impact",
-                    finding.get(
-                        "business_impact",
-                        ""
-                    )
+                    ""
                 ),
 
 
@@ -301,12 +333,10 @@ def index():
 
 
 
-                # NEW
-
                 "owasp":
                 finding.get(
                     "owasp",
-                    "A05:2021 - Security Misconfiguration"
+                    "A05:2021 Security Misconfiguration"
                 ),
 
 
@@ -325,7 +355,7 @@ def index():
 
 
 
-        result={
+        result = {
 
 
             "url":
@@ -360,7 +390,10 @@ def index():
             "ssl":
             scan.get(
                 "ssl",
-                False
+                {
+                    "status":
+                    "Unknown"
+                }
             ),
 
 
@@ -422,8 +455,6 @@ def index():
 
 
 
-            # NEW SCAN INFORMATION
-
             "scanner_version":
             scan.get(
                 "scanner_version",
@@ -443,7 +474,7 @@ def index():
             "scan_status":
             scan.get(
                 "scan_status",
-                "Completed"
+                "Success"
             )
 
         }
@@ -451,6 +482,7 @@ def index():
 
 
 
+        # Generate PDF
 
         try:
 
@@ -461,9 +493,12 @@ def index():
 
         except Exception:
 
+
             print(
                 traceback.format_exc()
             )
+
+
 
 
 
@@ -478,6 +513,11 @@ def index():
 
 
 
+
+# ---------------------------------
+# DOWNLOAD PDF
+# ---------------------------------
+
 @app.route(
     "/download-report"
 )
@@ -489,19 +529,21 @@ def download_report():
         PDF_FILE
     ):
 
+
         return send_file(
 
             PDF_FILE,
 
             as_attachment=True,
 
-            download_name="CyberSentinel_Security_Report.pdf"
+            download_name=
+            "CyberSentinel_Security_Report.pdf"
 
         )
 
 
     return (
-        "Report not found",
+        "Report not found. Run a scan first.",
         404
     )
 
@@ -510,10 +552,15 @@ def download_report():
 
 
 
-if __name__=="__main__":
+
+# ---------------------------------
+# START SERVER
+# ---------------------------------
+
+if __name__ == "__main__":
 
 
-    port=int(
+    port = int(
         os.environ.get(
             "PORT",
             10000

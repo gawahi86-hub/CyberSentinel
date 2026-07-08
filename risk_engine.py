@@ -1,36 +1,23 @@
 # ---------------------------------
-# CyberSentinel Risk Engine
-# Professional Security Risk Scoring
+# CyberSentinel v2.1
+# Professional Security Risk Engine
 # ---------------------------------
 
 
 # ---------------------------------
-# Calculate Weighted Risk Score
+# Calculate CVSS Based Risk Score
 # ---------------------------------
 
 def calculate_risk_score(findings):
 
-    total_score = 0
+    if not findings:
+        return 0
 
 
-    severity_weights = {
-
-        "CRITICAL": 1.5,
-
-        "HIGH": 1.0,
-
-        "MEDIUM": 0.5,
-
-        "LOW": 0.2,
-
-        "INFO": 0
-
-    }
-
+    total = 0
 
 
     for finding in findings:
-
 
         try:
 
@@ -41,44 +28,26 @@ def calculate_risk_score(findings):
                 )
             )
 
-
         except:
 
             cvss = 0
 
 
 
-        severity = finding.get(
-            "severity",
-            "INFO"
-        ).upper()
+        total += cvss
 
 
 
-        weight = severity_weights.get(
-            severity,
-            0
-        )
+    # Normalize score
 
-
-
-        total_score += (
-            cvss * weight
-        )
-
-
-
-    # Maximum score
-
-    total_score = min(
-        total_score,
+    score = min(
+        total,
         100
     )
 
 
-
     return round(
-        total_score,
+        score,
         1
     )
 
@@ -93,60 +62,28 @@ def calculate_risk_score(findings):
 def classify_risk(score):
 
 
-    if score <= 15:
-
+    if score <= 20:
 
         return {
 
             "level":
             "LOW",
-
 
             "verdict":
             "SAFE",
 
-
             "summary":
             (
-                "The website demonstrates a strong "
-                "security posture. Only minor security "
-                "improvements were identified."
+                "The website demonstrates a good "
+                "security posture. Only minor or no "
+                "security issues were identified."
             )
 
         }
 
 
 
-
-    elif score <= 35:
-
-
-        return {
-
-
-            "level":
-            "LOW",
-
-
-            "verdict":
-            "MOSTLY SAFE",
-
-
-            "summary":
-            (
-                "The website is generally secure. "
-                "Some security hardening recommendations "
-                "are available to improve protection."
-            )
-
-        }
-
-
-
-
-
-    elif score <= 60:
-
+    elif score <= 50:
 
         return {
 
@@ -161,18 +98,15 @@ def classify_risk(score):
 
             "summary":
             (
-                "Security weaknesses were identified. "
-                "Recommended improvements should be "
-                "implemented."
+                "Some security weaknesses were identified. "
+                "Recommended fixes should be implemented."
             )
 
         }
 
 
 
-
-
-    elif score <= 85:
+    elif score <= 80:
 
 
         return {
@@ -189,12 +123,11 @@ def classify_risk(score):
             "summary":
             (
                 "Multiple security issues were detected. "
-                "Immediate remediation is recommended."
+                "Immediate security improvements are "
+                "recommended."
             )
 
         }
-
-
 
 
 
@@ -224,31 +157,29 @@ def classify_risk(score):
 
 
 
-
-
 # ---------------------------------
-# Security Grade System
+# Security Grade
 # ---------------------------------
 
 def calculate_grade(score):
 
 
-    if score <= 15:
+    if score <= 20:
 
         return "A"
 
 
-    elif score <= 35:
+    elif score <= 50:
 
         return "B"
 
 
-    elif score <= 60:
+    elif score <= 80:
 
         return "C"
 
 
-    elif score <= 85:
+    elif score <= 95:
 
         return "D"
 
@@ -261,10 +192,8 @@ def calculate_grade(score):
 
 
 
-
-
 # ---------------------------------
-# Main Analysis Function
+# Main Security Analysis
 # ---------------------------------
 
 def analyze_security(findings):
@@ -280,7 +209,6 @@ def analyze_security(findings):
     )
 
 
-
     grade = calculate_grade(
         score
     )
@@ -290,23 +218,23 @@ def analyze_security(findings):
     return {
 
 
-        "score":
+        "risk_score":
         score,
 
 
-        "level":
+        "risk_level":
         risk["level"],
 
 
-        "verdict":
+        "safety_verdict":
         risk["verdict"],
 
 
-        "summary":
+        "final_summary":
         risk["summary"],
 
 
-        "grade":
+        "security_grade":
         grade,
 
 
